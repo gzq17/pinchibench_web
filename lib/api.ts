@@ -7,6 +7,7 @@ import type {
   BenchmarkVersionsResponse,
   ModelSubmissionsResponse,
   UserSubmissionsResponse,
+  ContributorsResponse,
 } from "@/lib/types";
 import { transformSubmission } from "@/lib/transforms";
 
@@ -170,4 +171,17 @@ export async function fetchSubmissionsClient(
     );
   }
   return response.json() as Promise<SubmissionsListResponse>;
+}
+
+export async function fetchContributors(
+  options?: { version?: string; limit?: number; offset?: number },
+): Promise<ContributorsResponse> {
+  const params = new URLSearchParams();
+  if (options?.version) params.set("version", options.version);
+  if (options?.limit != null) params.set("limit", String(options.limit));
+  if (options?.offset != null) params.set("offset", String(options.offset));
+  const query = params.toString();
+  return fetchJson<ContributorsResponse>(
+    `/contributors${query ? `?${query}` : ""}`,
+  );
 }
