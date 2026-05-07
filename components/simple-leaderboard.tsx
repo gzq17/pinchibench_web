@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { DEFAULT_TABLE_ROW_LIMIT } from '@/lib/constants'
 import type { LeaderboardEntry, SortMode } from '@/lib/types'
-import { PROVIDER_COLORS } from '@/lib/types'
+import { PROVIDER_COLORS, TASK_CATEGORY_BY_ID } from '@/lib/types'
 import { ShareableWrapper } from '@/components/shareable-wrapper'
 import { KiloClawAdCard } from '@/components/kiloclaw-ad-card'
 
@@ -20,6 +20,8 @@ interface SimpleLeaderboardProps {
   showZeroCostResults: boolean
   benchmarkVersion?: string | null
   officialOnly: boolean
+  selectedCategories?: string[]
+  activeCategoryTaskCount?: number | null
   onScoreModeChange?: (mode: 'best' | 'average') => void
   onSortModeChange?: (mode: SortMode) => void
   onMaxCostFilterChange?: (value: string) => void
@@ -96,15 +98,22 @@ export function SimpleLeaderboard({
   showZeroCostResults,
   benchmarkVersion,
   officialOnly,
+  selectedCategories = [],
+  activeCategoryTaskCount,
   onProviderClick,
 }: SimpleLeaderboardProps) {
   const [showAllEntries, setShowAllEntries] = useState(false)
+  const categoryFilterActive = selectedCategories.length > 0
+  const selectedCategoryLabels = selectedCategories
+    .map((cat) => TASK_CATEGORY_BY_ID[cat]?.label ?? cat.replace(/_/g, ' '))
+    .join(', ')
 
   const submissionHref = (submissionId: string) => (
     officialOnly ? `/submission/${submissionId}` : `/submission/${submissionId}?official=false`
   )
 
   const getSortScorePercentage = (entry: LeaderboardEntry) => {
+    if (categoryFilterActive) return entry.percentage
     if (scoreMode === 'average') {
       return entry.average_score_percentage != null
         ? entry.average_score_percentage * 100
@@ -413,15 +422,24 @@ export function SimpleLeaderboard({
         )}
 
         <p className="text-sm text-muted-foreground mb-2">
-          Percentage of{' '}
-          <Link
-            href="https://github.com/pinchbench/skill/tree/main/tasks"
-            className="underline underline-offset-2 hover:text-foreground"
-            target="_blank"
-          >
-            tasks
-          </Link>{' '}
-          completed successfully across standardized OpenClaw agent tests
+          {categoryFilterActive ? (
+            <>
+              Best-run scores recalculated from {selectedCategoryLabels}
+              {activeCategoryTaskCount != null ? ` (${activeCategoryTaskCount} tasks)` : ''}.
+            </>
+          ) : (
+            <>
+              Percentage of{' '}
+              <Link
+                href="https://github.com/pinchbench/skill/tree/main/tasks"
+                className="underline underline-offset-2 hover:text-foreground"
+                target="_blank"
+              >
+                tasks
+              </Link>{' '}
+              completed successfully across standardized OpenClaw agent tests
+            </>
+          )}
         </p>
         <p className="text-xs text-muted-foreground mb-6 flex items-center gap-1.5">
           <Info className="h-3 w-3 flex-shrink-0" />
@@ -442,20 +460,24 @@ export function SimpleLeaderboard({
 
         {/* Bar Chart - hidden on mobile */}
         <ShareableWrapper
-          title="Success Rate by Model"
-          subtitle={`${displayedEntries.length} models${sortMode === 'value' ? ' • sorted by value' : ` • sorted by ${scoreMode} score`}`}
+          title={categoryFilterActive ? 'Category Score by Model' : 'Success Rate by Model'}
+          subtitle={categoryFilterActive
+            ? `${displayedEntries.length} models • ${selectedCategoryLabels}`
+            : `${displayedEntries.length} models${sortMode === 'value' ? ' • sorted by value' : ` • sorted by ${scoreMode} score`}`}
           alwaysShowButton
         >
           <div className="hidden md:block bg-card border border-border rounded-lg p-6 mb-6">
             <div className="mb-4 flex items-center gap-5 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-2">
                 <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: BEST_SCORE_COLOR }} />
-                Best Score
+                {categoryFilterActive ? 'Category Score' : 'Best Score'}
               </span>
-              <span className="inline-flex items-center gap-2">
-                <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: AVG_SCORE_COLOR }} />
-                Average Score
-              </span>
+              {!categoryFilterActive && (
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: AVG_SCORE_COLOR }} />
+                  Average Score
+                </span>
+              )}
             </div>
             <div className="space-y-3">
               {(showAllEntries ? displayedEntries.concat(nullEntries) : displayedEntries).map((entry) => {
@@ -501,21 +523,23 @@ export function SimpleLeaderboard({
                                   {bestPct.toFixed(1)}%
                                 </span>
                               </div>
-                              <div className="bg-muted rounded-full h-7 relative overflow-hidden">
-                                <div
-                                  className="h-full rounded-full transition-all duration-300 group-hover:opacity-80"
-                                  style={{
-                                    width: `${avgPct ?? 0}%`,
-                                    backgroundColor: AVG_SCORE_COLOR,
-                                  }}
-                                />
-                                <span
-                                  className="absolute inset-y-0 right-3 flex items-center text-xs font-bold text-foreground"
-                                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-                                >
-                                  {avgPct == null ? 'N/A' : `${avgPct.toFixed(1)}%`}
-                                </span>
-                              </div>
+                              {!categoryFilterActive && (
+                                <div className="bg-muted rounded-full h-7 relative overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-300 group-hover:opacity-80"
+                                    style={{
+                                      width: `${avgPct ?? 0}%`,
+                                      backgroundColor: AVG_SCORE_COLOR,
+                                    }}
+                                  />
+                                  <span
+                                    className="absolute inset-y-0 right-3 flex items-center text-xs font-bold text-foreground"
+                                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                                  >
+                                    {avgPct == null ? 'N/A' : `${avgPct.toFixed(1)}%`}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                             <div className="w-24 text-right space-y-1.5">
                               <div>
@@ -526,14 +550,16 @@ export function SimpleLeaderboard({
                                   {bestPct.toFixed(1)}%
                                 </span>
                               </div>
-                              <div>
-                                <span
-                                  className="text-sm font-bold"
-                                  style={{ color: AVG_SCORE_COLOR }}
-                                >
-                                  {avgPct == null ? 'N/A' : `${avgPct.toFixed(1)}%`}
-                                </span>
-                              </div>
+                              {!categoryFilterActive && (
+                                <div>
+                                  <span
+                                    className="text-sm font-bold"
+                                    style={{ color: AVG_SCORE_COLOR }}
+                                  >
+                                    {avgPct == null ? 'N/A' : `${avgPct.toFixed(1)}%`}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -547,9 +573,9 @@ export function SimpleLeaderboard({
                         </span>
                       </p>
                       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                        <span className="text-muted-foreground">Best score</span>
+                        <span className="text-muted-foreground">{categoryFilterActive ? 'Category score' : 'Best score'}</span>
                         <span className="text-foreground font-medium text-right">{bestPct.toFixed(1)}%</span>
-                        {avgPct != null && (
+                        {!categoryFilterActive && avgPct != null && (
                           <>
                             <span className="text-muted-foreground">Avg score</span>
                             <span className="text-foreground font-medium text-right">{avgPct.toFixed(1)}%</span>
@@ -608,8 +634,10 @@ export function SimpleLeaderboard({
 
         {/* Simple Table */}
         <ShareableWrapper
-          title="Success Rate Rankings"
-          subtitle={`${displayedEntries.length} models • sorted by ${scoreMode} score`}
+          title={categoryFilterActive ? 'Category Score Rankings' : 'Success Rate Rankings'}
+          subtitle={categoryFilterActive
+            ? `${displayedEntries.length} models • ${selectedCategoryLabels}`
+            : `${displayedEntries.length} models • sorted by ${scoreMode} score`}
         >
           <div className="bg-card border border-border rounded-lg overflow-hidden">
             <table className="w-full">
@@ -622,16 +650,18 @@ export function SimpleLeaderboard({
                     Provider
                   </th>
                   <th className="px-2 md:px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
-                    <span className="md:hidden">{scoreMode === 'best' ? 'Best %' : 'Avg %'}</span>
-                    <span className="hidden md:inline">Best %</span>
+                    <span className="md:hidden">{categoryFilterActive ? 'Cat %' : scoreMode === 'best' ? 'Best %' : 'Avg %'}</span>
+                    <span className="hidden md:inline">{categoryFilterActive ? 'Category %' : 'Best %'}</span>
                   </th>
-                  <th className="hidden md:table-cell px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
-                    <ColumnTooltip
-                      label="Avg %"
-                      description="Average success rate across all runs for this model. Click any row to see the per-task scoring breakdown with individual pass/fail details."
-                      benchmarkVersion={benchmarkVersion}
-                    />
-                  </th>
+                  {!categoryFilterActive && (
+                    <th className="hidden md:table-cell px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
+                      <ColumnTooltip
+                        label="Avg %"
+                        description="Average success rate across all runs for this model. Click any row to see the per-task scoring breakdown with individual pass/fail details."
+                        benchmarkVersion={benchmarkVersion}
+                      />
+                    </th>
+                  )}
                   {sortMode === 'value' && (
                     <th className="hidden md:table-cell px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
                       <ColumnTooltip
@@ -649,8 +679,8 @@ export function SimpleLeaderboard({
                   const avgPct = entry.average_score_percentage != null
                     ? entry.average_score_percentage * 100
                     : null
-                  const mobileScore = scoreMode === 'best' ? bestPct : avgPct
-                  const mobileScoreColor = scoreMode === 'best' ? BEST_SCORE_COLOR : AVG_SCORE_COLOR
+                  const mobileScore = categoryFilterActive || scoreMode === 'best' ? bestPct : avgPct
+                  const mobileScoreColor = categoryFilterActive || scoreMode === 'best' ? BEST_SCORE_COLOR : AVG_SCORE_COLOR
                   return (
                     <tr
                       key={entry.submission_id}
@@ -700,11 +730,13 @@ export function SimpleLeaderboard({
                           {bestPct.toFixed(1)}%
                         </span>
                       </td>
-                      <td className="hidden md:table-cell px-4 py-3 text-right">
-                        <span className="text-sm font-medium" style={{ color: AVG_SCORE_COLOR }}>
-                          {avgPct == null ? 'N/A' : `${avgPct.toFixed(1)}%`}
-                        </span>
-                      </td>
+                      {!categoryFilterActive && (
+                        <td className="hidden md:table-cell px-4 py-3 text-right">
+                          <span className="text-sm font-medium" style={{ color: AVG_SCORE_COLOR }}>
+                            {avgPct == null ? 'N/A' : `${avgPct.toFixed(1)}%`}
+                          </span>
+                        </td>
+                      )}
                       {sortMode === 'value' && (
                         <td className="hidden md:table-cell px-4 py-3 text-right">
                           {entry.value_score != null ? (

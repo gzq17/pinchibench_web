@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import type { LeaderboardEntry, BenchmarkVersion, SortMode } from '@/lib/types'
+import type { LeaderboardEntry, BenchmarkVersion, SortMode, TaskResult } from '@/lib/types'
 import { PROVIDER_COLORS } from '@/lib/types'
+import { fetchSubmissionClient } from '@/lib/api'
+import { calculateCategoryFilteredScore, calculateRanksByPercentage } from '@/lib/category-scores'
+import { transformSubmission } from '@/lib/transforms'
 import { SimpleLeaderboard } from '@/components/simple-leaderboard'
 import { ScatterGraphs } from '@/components/scatter-graphs'
 import { TaskHeatmap } from '@/components/task-heatmap'
@@ -70,6 +73,9 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
     const [sortMode, setSortModeState] = useState<SortMode>(initialSortMode)
     const [maxCostFilter, setMaxCostFilterState] = useState<string>(initialBudget)
     const [showZeroCostResults, setShowZeroCostResultsState] = useState<boolean>(initialZeroCost)
+    const [taskDataBySubmission, setTaskDataBySubmission] = useState<Record<string, TaskResult[]>>({})
+    const [taskDataLoading, setTaskDataLoading] = useState(false)
+    const [taskDataError, setTaskDataError] = useState<string | null>(null)
 
     // Helper to update URL params without full page reload
     const updateUrl = useCallback((updates: Record<string, string | null>) => {
@@ -152,6 +158,8 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
         [searchParams]
     )
 
+    const categoryFilterActive = selectedCategories.length > 0
+
     // Business-level filters only (provider filter, open weights).
     // Used for legend provider list and all charts/tables.
     const businessFilteredEntries = useMemo(() => {
@@ -192,6 +200,108 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
         }
     }, [providerFilter, openWeightsOnly, businessFilteredEntries])
 
+    // Category filtering: fetch task data when category filter is active
+    useEffect(() => {
+        if (!categoryFilterActive) {
+            setTaskDataLoading(false)
+            setTaskDataError(null)
+            return
+        }
+
+        const missingEntries = filteredEntries.filter(
+            (entry) => !taskDataBySubmission[entry.submission_id]
+        )
+
+        if (missingEntries.length === 0) {
+            setTaskDataLoading(false)
+            return
+        }
+
+        let cancelled = false
+
+        async function loadTaskData(entriesToLoad: LeaderboardEntry[]) {
+            setTaskDataLoading(true)
+            setTaskDataError(null)
+
+            try {
+                const loaded: Record<string, TaskResult[]> = {}
+                const batchSize = 5
+
+                for (let i = 0; i < entriesToLoad.length; i += batchSize) {
+                    if (cancelled) return
+                    const batch = entriesToLoad.slice(i, i + batchSize)
+                    const results = await Promise.all(
+                        batch.map(async (entry) => {
+                            try {
+                                const response = await fetchSubmissionClient(entry.submission_id)
+                                return {
+                                    submissionId: entry.submission_id,
+                                    tasks: transformSubmission(response.submission).task_results,
+                                }
+                            } catch {
+                                return null
+                            }
+                        })
+                    )
+
+                    for (const result of results) {
+                        if (result) loaded[result.submissionId] = result.tasks
+                    }
+                }
+
+                if (!cancelled) {
+                    if (Object.keys(loaded).length > 0) {
+                        setTaskDataBySubmission((current) => ({ ...current, ...loaded }))
+                    }
+                    setTaskDataLoading(false)
+                }
+            } catch {
+                if (!cancelled) {
+                    setTaskDataError('Unable to load category scores')
+                    setTaskDataLoading(false)
+                }
+            }
+        }
+
+        loadTaskData(missingEntries)
+        return () => { cancelled = true }
+    }, [categoryFilterActive, filteredEntries, taskDataBySubmission])
+
+    const categoryScoredEntries = useMemo(() => {
+        if (!categoryFilterActive) return filteredEntries
+
+        const scored: LeaderboardEntry[] = []
+
+        for (const entry of filteredEntries) {
+            const tasks = taskDataBySubmission[entry.submission_id]
+            if (!tasks) continue
+            const categoryScore = calculateCategoryFilteredScore(tasks, selectedCategories)
+            if (categoryScore.percentage == null || categoryScore.count === 0) continue
+            scored.push({
+                ...entry,
+                percentage: categoryScore.percentage,
+                average_score_percentage: null,
+            })
+        }
+
+        scored.sort((a, b) => b.percentage - a.percentage)
+
+        return calculateRanksByPercentage(scored)
+    }, [categoryFilterActive, filteredEntries, selectedCategories, taskDataBySubmission])
+
+    const activeCategoryTaskCount = useMemo(() => {
+        if (!categoryFilterActive) return null
+        const counts = new Set<number>()
+        for (const entry of filteredEntries) {
+            const tasks = taskDataBySubmission[entry.submission_id]
+            if (!tasks) continue
+            const count = calculateCategoryFilteredScore(tasks, selectedCategories).count
+            if (count > 0) counts.add(count)
+        }
+        if (counts.size > 0) return Math.max(...counts)
+        return taskDataLoading ? null : 0
+    }, [categoryFilterActive, filteredEntries, selectedCategories, taskDataBySubmission, taskDataLoading])
+
     const providerColor = providerFilter
         ? PROVIDER_COLORS[providerFilter.toLowerCase()] || '#666'
         : undefined
@@ -220,6 +330,9 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
                 sortMode={sortMode}
                 officialOnly={officialOnlyState}
                 openWeightsOnly={openWeightsOnly}
+                selectedCategories={selectedCategories}
+                categoryDataLoading={taskDataLoading}
+                activeCategoryTaskCount={activeCategoryTaskCount}
                 modelSearchValue={modelSearch}
                 maxCostFilter={maxCostFilter}
                 showZeroCostResults={showZeroCostResults}
@@ -229,6 +342,7 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
                 onSortModeChange={setSortMode}
                 onOfficialOnlyChange={setOfficialOnly}
                 onOpenWeightsOnlyChange={setOpenWeightsOnly}
+                onCategoriesChange={setSelectedCategories}
                 onClearProviderFilter={() => setProviderFilter(null)}
                 onModelSearchChange={handleModelSearchChange}
                 onMaxCostFilterChange={setMaxCostFilter}
@@ -301,8 +415,19 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
                         <KiloClawAdCard />
                     </div>
                 ) : (
+                    <>
+                    {categoryFilterActive && taskDataError ? (
+                        <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                            {taskDataError}
+                        </div>
+                    ) : null}
+                    {categoryFilterActive && taskDataLoading ? (
+                        <div className="mb-4 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                            Loading category-specific scores for {filteredEntries.length} models...
+                        </div>
+                    ) : null}
                     <SimpleLeaderboard
-                        entries={businessFilteredEntries}
+                        entries={categoryScoredEntries}
                         view={view as 'success' | 'speed' | 'cost' | 'value'}
                         scoreMode={scoreMode}
                         sortMode={sortMode}
@@ -310,12 +435,15 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
                         showZeroCostResults={showZeroCostResults}
                         benchmarkVersion={currentVersion}
                         officialOnly={officialOnlyState}
+                        selectedCategories={selectedCategories}
+                        activeCategoryTaskCount={activeCategoryTaskCount}
                         onScoreModeChange={setScoreMode}
                         onSortModeChange={setSortMode}
                         onMaxCostFilterChange={setMaxCostFilter}
                         onShowZeroCostResultsChange={setShowZeroCostResults}
                         onProviderClick={setProviderFilter}
                     />
+                    </>
                 )}
             </main>
         </div>

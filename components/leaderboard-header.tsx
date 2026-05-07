@@ -5,6 +5,7 @@ import { Github, BarChart3, Zap, Gem, DollarSign, Trophy } from 'lucide-react'
 import type { LeaderboardEntry } from '@/lib/types'
 import { ModelSearch } from '@/components/model-search'
 import { FilterPanel } from '@/components/filter-panel'
+import { CategoryPills } from '@/components/category-pills'
 import type { BenchmarkVersion } from '@/lib/types'
 
 type ViewMode = 'success' | 'speed' | 'cost' | 'value' | 'graphs'
@@ -26,6 +27,9 @@ interface LeaderboardHeaderProps {
   sortMode: SortMode
   officialOnly: boolean
   openWeightsOnly: boolean
+  selectedCategories: string[]
+  categoryDataLoading: boolean
+  activeCategoryTaskCount: number | null
   modelSearchValue: string
   maxCostFilter: string
   showZeroCostResults: boolean
@@ -35,6 +39,7 @@ interface LeaderboardHeaderProps {
   onSortModeChange: (mode: SortMode) => void
   onOfficialOnlyChange: (officialOnly: boolean) => void
   onOpenWeightsOnlyChange: (openWeightsOnly: boolean) => void
+  onCategoriesChange: (categories: string[]) => void
   onClearProviderFilter: () => void
   onModelSearchChange: (value: string) => void
   onMaxCostFilterChange: (value: string) => void
@@ -63,6 +68,9 @@ export function LeaderboardHeader({
   sortMode,
   officialOnly,
   openWeightsOnly,
+  selectedCategories,
+  categoryDataLoading,
+  activeCategoryTaskCount,
   modelSearchValue,
   maxCostFilter,
   showZeroCostResults,
@@ -72,6 +80,7 @@ export function LeaderboardHeader({
   onSortModeChange,
   onOfficialOnlyChange,
   onOpenWeightsOnlyChange,
+  onCategoriesChange,
   onClearProviderFilter,
   onModelSearchChange,
   onMaxCostFilterChange,
@@ -208,6 +217,18 @@ export function LeaderboardHeader({
               </Link>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Category filter pills */}
+      <div className="border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-2">
+          <CategoryPills
+            selectedCategories={selectedCategories}
+            onCategoriesChange={onCategoriesChange}
+            disabled={categoryDataLoading}
+            activeTaskCount={activeCategoryTaskCount}
+          />
         </div>
       </div>
 
