@@ -144,6 +144,12 @@ export function LeaderboardHeader({
             >
               About
             </Link>
+            <Link
+              href="/contributors"
+              className="hidden md:inline-flex px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-secondary transition-colors"
+            >
+              Contributors
+            </Link>
             <a
               href="https://github.com/pinchbench/skill"
               target="_blank"
