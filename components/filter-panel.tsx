@@ -208,8 +208,8 @@ export function FilterPanel({
               <p className="text-xs text-muted-foreground">
                 Hide models that exceed your max cost per benchmark run.
               </p>
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-secondary/30">
-                <span className="text-lg text-muted-foreground">$</span>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-secondary/30">
+                <span className="text-sm text-muted-foreground">$</span>
                 <input
                   type="number"
                   min="0"
@@ -217,7 +217,7 @@ export function FilterPanel({
                   placeholder="0.00"
                   value={maxCostFilter}
                   onChange={(e) => onMaxCostFilterChange(e.target.value)}
-                  className="flex-1 bg-transparent text-lg font-semibold text-foreground focus:outline-none"
+                  className="flex-1 bg-transparent text-sm font-medium text-foreground focus:outline-none"
                 />
                 {maxCostFilter && (
                   <button
@@ -225,7 +225,7 @@ export function FilterPanel({
                     onClick={() => onMaxCostFilterChange('')}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3" />
                   </button>
                 )}
               </div>
@@ -239,7 +239,7 @@ export function FilterPanel({
                   <button
                     key={preset.value}
                     onClick={() => onMaxCostFilterChange(preset.value)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
                       maxCostFilter === preset.value
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-secondary/50 text-muted-foreground border-border hover:text-foreground hover:bg-secondary'
