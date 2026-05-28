@@ -46,6 +46,8 @@ export interface RecommendationPick {
   entry: LeaderboardEntry;
   metricLabel: string;
   metricValue: string;
+  /** When true, the card's "% overall" subtitle shows the average score instead of the best/max. */
+  useAverageScore?: boolean;
 }
 
 export interface TaskResult {
