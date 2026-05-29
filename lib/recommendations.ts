@@ -53,6 +53,17 @@ export function formatCost(cost: number | null | undefined): string {
   return `$${cost.toFixed(cost < 1 ? 3 : 2)}`;
 }
 
+/**
+ * Average success rate for a model on a 0-100 scale.
+ * `average_score_percentage` is stored on a 0-1 scale; fall back to the
+ * best/max `percentage` (already 0-100) when no average is available.
+ */
+export function getAverageScorePercent(entry: LeaderboardEntry): number {
+  return entry.average_score_percentage != null
+    ? entry.average_score_percentage * 100
+    : entry.percentage;
+}
+
 export function formatDuration(seconds: number | null | undefined): string {
   if (seconds == null) return "N/A";
   if (seconds >= 60) return `${(seconds / 60).toFixed(1)}m`;
@@ -161,7 +172,7 @@ export function getCategoryChampionBadges(entries: EnrichedLeaderboardEntry[]): 
 }
 
 export function getQuickRecommendations(entries: EnrichedLeaderboardEntry[]): RecommendationPick[] {
-  const bestOverall = [...entries].sort((a, b) => b.percentage - a.percentage)[0];
+  const bestOverall = [...entries].sort((a, b) => getAverageScorePercent(b) - getAverageScorePercent(a))[0];
   const fastest = [...entries]
     .filter((entry) => entry.best_execution_time_seconds != null)
     .sort((a, b) => (a.best_execution_time_seconds ?? Infinity) - (b.best_execution_time_seconds ?? Infinity))[0];
@@ -171,6 +182,9 @@ export function getQuickRecommendations(entries: EnrichedLeaderboardEntry[]): Re
   const bestValue = sortEntriesForBestFor(entries, "budget")[0];
   const bestCode = sortEntriesForBestFor(entries, "coding")[0];
   const bestData = sortEntriesForBestFor(entries, "data-analysis")[0];
+  const bestOpenWeights = [...entries]
+    .filter((entry) => entry.weights === "Open")
+    .sort((a, b) => getAverageScorePercent(b) - getAverageScorePercent(a))[0];
 
   const picks: Array<RecommendationPick | null | undefined> = [
     bestOverall && {
@@ -178,11 +192,24 @@ export function getQuickRecommendations(entries: EnrichedLeaderboardEntry[]): Re
       label: "Best Overall",
       shortLabel: "Overall",
       icon: "👑",
-      description: "Highest verified success rate across the benchmark.",
+      description: "Highest average across benchmark runs.",
       href: "/",
       entry: bestOverall,
-      metricLabel: "Score",
-      metricValue: `${bestOverall.percentage.toFixed(1)}%`,
+      metricLabel: "Average Score",
+      metricValue: `${getAverageScorePercent(bestOverall).toFixed(1)}%`,
+      useAverageScore: true,
+    },
+    bestOpenWeights && {
+      key: "open-weights",
+      label: "Best Open-Weights",
+      shortLabel: "Open-Weights",
+      icon: "🔓",
+      description: "Highest open-weights average across benchmark runs.",
+      href: "/?weights=open",
+      entry: bestOpenWeights,
+      metricLabel: "Average Score",
+      metricValue: `${getAverageScorePercent(bestOpenWeights).toFixed(1)}%`,
+      useAverageScore: true,
     },
     fastest && {
       key: "speed",

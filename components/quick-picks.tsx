@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { RecommendationPick } from "@/lib/types";
-import { formatCost } from "@/lib/recommendations";
+import { formatCost, getAverageScorePercent } from "@/lib/recommendations";
 
 interface QuickPicksProps {
   picks: RecommendationPick[];
@@ -42,7 +42,7 @@ export function QuickPicks({ picks }: QuickPicksProps) {
             </code>
             <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
               <span>{pick.metricLabel}</span>
-              <span>{pick.entry.percentage.toFixed(1)}% overall · {formatCost(pick.entry.best_cost_usd)}</span>
+              <span>{(pick.useAverageScore ? getAverageScorePercent(pick.entry) : pick.entry.percentage).toFixed(1)}% overall · {formatCost(pick.entry.best_cost_usd)}</span>
             </div>
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{pick.description}</p>
           </Link>
