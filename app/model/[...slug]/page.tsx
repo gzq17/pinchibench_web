@@ -32,28 +32,60 @@ export default async function ModelPage({ params, searchParams }: ModelPageProps
 
   const provider = slug[0]
   const modelName = slug.slice(1).join('/')
-  const modelString = `${provider}/${modelName}`
 
+  // Try fetching with the parsed model name first.
+  // If that returns no results, retry with the full slug as the model name.
+  // This handles cases where provider was empty in the DB, causing URLs like
+  // /model/nvidia/nemotron-3-ultra-550b-a55b where "nvidia" is actually part
+  // of the model name, not the provider.
   let modelData
+  let resolvedModelName = modelName
   try {
     modelData = await fetchModelSubmissions(modelName, { officialOnly })
+
+    // Fallback: if no submissions found, try the full slug as model name
+    if ((!modelData || modelData.submissions.length === 0) && slug.length >= 2) {
+      const fullSlugAsModel = slug.join('/')
+      const fallbackData = await fetchModelSubmissions(fullSlugAsModel, { officialOnly })
+      if (fallbackData && fallbackData.submissions.length > 0) {
+        modelData = fallbackData
+        resolvedModelName = fullSlugAsModel
+      }
+    }
   } catch (error) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <Card className="max-w-4xl mx-auto p-6">
-          <h2 className="text-xl font-bold mb-4">Error loading model data</h2>
-          <p className="text-muted-foreground">Could not fetch submissions for {modelName}.</p>
-          <Link href="/">
-            <Button className="mt-4">Back to Leaderboard</Button>
-          </Link>
-        </Card>
-      </div>
-    )
+    // If initial fetch threw, still try the fallback
+    try {
+      const fullSlugAsModel = slug.join('/')
+      const fallbackData = await fetchModelSubmissions(fullSlugAsModel, { officialOnly })
+      if (fallbackData && fallbackData.submissions.length > 0) {
+        modelData = fallbackData
+        resolvedModelName = fullSlugAsModel
+      }
+    } catch {
+      // Both attempts failed
+    }
+
+    if (!modelData || modelData.submissions.length === 0) {
+      return (
+        <div className="min-h-screen bg-background p-6">
+          <Card className="max-w-4xl mx-auto p-6">
+            <h2 className="text-xl font-bold mb-4">Error loading model data</h2>
+            <p className="text-muted-foreground">Could not fetch submissions for {modelName}.</p>
+            <Link href="/">
+              <Button className="mt-4">Back to Leaderboard</Button>
+            </Link>
+          </Card>
+        </div>
+      )
+    }
   }
 
   if (!modelData || modelData.submissions.length === 0) {
     notFound()
   }
+
+  // modelString is always the full slug path for badge display etc.
+  const modelString = slug.join('/')
 
   const submissions = [...modelData.submissions].sort((a, b) =>
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -67,7 +99,7 @@ export default async function ModelPage({ params, searchParams }: ModelPageProps
   const avgCost = submissions.reduce((a, b) => a + (b.total_cost_usd || 0), 0) / submissions.length
   const avgSpeed = submissions.reduce((a, b) => a + (b.total_execution_time_seconds || 0), 0) / submissions.length
 
-  const compareUrl = `/?view=graphs&graph=radar&models=${encodeURIComponent(modelName)}${officialOnly ? '' : '&official=false'}`
+  const compareUrl = `/?view=graphs&graph=radar&models=${encodeURIComponent(resolvedModelName)}${officialOnly ? '' : '&official=false'}`
 
   const trendData = submissions.map(s => ({
     timestamp: s.timestamp,
@@ -103,7 +135,7 @@ export default async function ModelPage({ params, searchParams }: ModelPageProps
 
   const bestSubmissionDetail = await fetchBestTaskData(sortedByScore.map(s => s.id))
 
-  const badgeStatuses = await getModelBadgeStatuses(modelName).catch(() => [])
+  const badgeStatuses = await getModelBadgeStatuses(resolvedModelName).catch(() => [])
 
   let tasks: TaskResult[] = []
   if (bestSubmissionDetail?.submission?.tasks) {
@@ -138,7 +170,7 @@ export default async function ModelPage({ params, searchParams }: ModelPageProps
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-mono font-bold text-foreground">
-                  {modelName}
+                  {resolvedModelName}
                 </h1>
                 <Badge
                   variant="outline"

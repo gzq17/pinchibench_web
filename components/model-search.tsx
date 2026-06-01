@@ -87,7 +87,10 @@ export function ModelSearch({ entries, officialOnly, searchValue, onSearchChange
                       key={m.model}
                       value={m.model}
                       onSelect={() => {
-                        router.push(`/model/${m.provider.toLowerCase()}/${m.model}${officialOnly ? '' : '?official=false'}`)
+                        const provider = m.provider?.trim()
+                          ? m.provider.toLowerCase()
+                          : m.model.split('/')[0]?.toLowerCase() || 'unknown'
+                        router.push(`/model/${provider}/${m.model}${officialOnly ? '' : '?official=false'}`)
                         setOpen(false)
                       }}
                     >

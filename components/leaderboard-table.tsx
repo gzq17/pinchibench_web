@@ -28,6 +28,20 @@ const getScoreColor = (percentage: number) => {
   return 'text-red-500'
 }
 
+/**
+ * Build the model detail page URL, guarding against empty provider.
+ * When provider is empty, uses the first segment of the model name as provider.
+ * e.g. model="nvidia/nemotron-3-ultra-550b-a55b" with empty provider
+ * → /model/nvidia/nemotron-3-ultra-550b-a55b
+ */
+const getModelDetailUrl = (entry: LeaderboardEntry) => {
+  const provider = entry.provider?.trim()
+    ? entry.provider.toLowerCase()
+    : entry.model.split('/')[0]?.toLowerCase() || 'unknown'
+  const officialParam = entry.official === false ? '?official=false' : ''
+  return `/model/${provider}/${entry.model}${officialParam}`
+}
+
 export function LeaderboardTable({ entries }: LeaderboardTableProps) {
   const [sortBy, setSortBy] = useState<'score' | 'date'>('score')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -126,7 +140,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
                   </div>
                 </td>
                 <td className="px-4 py-4">
-                  <Link href={`/model/${entry.provider.toLowerCase()}/${entry.model}${entry.official === false ? '?official=false' : ''}`}>
+                  <Link href={getModelDetailUrl(entry)}>
                     <code className="text-sm font-mono text-foreground hover:text-primary transition-colors cursor-pointer">
                       {entry.model}
                     </code>
@@ -202,7 +216,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
         {displayedEntries.map((entry) => (
           <Link
             key={entry.submission_id}
-            href={`/model/${entry.provider.toLowerCase()}/${entry.model}${entry.official === false ? '?official=false' : ''}`}
+            href={getModelDetailUrl(entry)}
             className="block p-4 hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-start justify-between mb-3">
