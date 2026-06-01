@@ -59,7 +59,7 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
         : 'success'
     const initialScoreMode = VALID_SCORE_MODES.includes(searchParams.get('score') as ScoreMode)
         ? (searchParams.get('score') as ScoreMode)
-        : 'best'
+        : 'average'
     const initialProviders = parseProvidersParam(searchParams.get('provider'))
     const initialOpenWeights = searchParams.get('weights') === 'open'
     const initialGraphTab = VALID_GRAPH_TABS.includes(searchParams.get('graph') as GraphSubTab)
@@ -99,7 +99,7 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
         }
         // Remove defaults to keep URL clean
         if (params.get('view') === 'success') params.delete('view')
-        if (params.get('score') === 'best') params.delete('score')
+        if (params.get('score') === 'average') params.delete('score')
         if (params.get('weights') !== 'open') params.delete('weights')
         if (params.get('sort') === 'quality') params.delete('sort')
         if (!params.get('budget')) params.delete('budget')
