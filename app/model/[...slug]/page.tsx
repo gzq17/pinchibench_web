@@ -36,7 +36,7 @@ export default async function ModelPage({ params, searchParams }: ModelPageProps
 
   let modelData
   try {
-    modelData = await fetchModelSubmissions(modelString, { officialOnly })
+    modelData = await fetchModelSubmissions(modelName, { officialOnly })
   } catch (error) {
     return (
       <div className="min-h-screen bg-background p-6">
