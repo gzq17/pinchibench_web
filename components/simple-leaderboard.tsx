@@ -264,8 +264,12 @@ export function SimpleLeaderboard({
   const hiddenRowCount = hiddenEntries.length + nullEntries.length
   const showToggle = hiddenRowCount > 0
 
-  const modelHref = (provider: string, model: string) =>
-    `/model/${provider.toLowerCase()}/${model}${officialOnly ? '' : '?official=false'}`
+  const modelHref = (provider: string, model: string) => {
+    const resolvedProvider = provider?.trim()
+      ? provider.toLowerCase()
+      : model.split('/')[0]?.toLowerCase() || 'unknown'
+    return `/model/${resolvedProvider}/${model}${officialOnly ? '' : '?official=false'}`
+  }
 
   const renderBadges = (entry: LeaderboardEntry) => {
     const badges = championBadges[entry.submission_id] ?? []
