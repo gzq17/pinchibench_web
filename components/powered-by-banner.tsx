@@ -21,9 +21,9 @@ export function PoweredByBanner() {
     }
 
     const handleClick = () => {
-        posthog?.capture('kiloclaw_cta_click', {
+        posthog?.capture('kilo_cta_click', {
             location: 'powered_by_banner',
-            destination: 'https://kilo.ai/kiloclaw?utm_source=pinchbench&utm_medium=referral',
+            destination: 'https://kilo.ai?utm_source=pinchbench&utm_medium=referral',
         })
     }
 
@@ -37,15 +37,14 @@ export function PoweredByBanner() {
                 <p className="text-center text-sm pr-8">
                     <span className="text-muted-foreground">Powered by </span>
                     <a
-                        href="https://kilo.ai/kiloclaw?utm_source=pinchbench&utm_medium=referral"
+                        href="https://kilo.ai?utm_source=pinchbench&utm_medium=referral"
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={handleClick}
                         className="font-medium text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors"
                     >
-                        KiloClaw
+                        Kilo
                     </a>
-                    <span className="text-muted-foreground"> — The best way to Claw</span>
                 </p>
                 <button
                     onClick={handleDismiss}
