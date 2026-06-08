@@ -12,6 +12,7 @@ import type {
 import { transformSubmission } from "@/lib/transforms";
 
 const API_BASE = "https://api.pinchbench.com/api";
+const SUBMISSION_DETAIL_REVALIDATE_SECONDS = 60;
 
 interface OfficialFilterOptions {
   officialOnly?: boolean;
@@ -29,6 +30,10 @@ async function fetchJson<T>(path: string): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+function submissionDetailPath(id: string): string {
+  return `/submissions/${encodeURIComponent(id)}`;
 }
 
 export async function fetchLeaderboard(
@@ -64,7 +69,33 @@ export async function fetchBenchmarkVersions(): Promise<BenchmarkVersionsRespons
 export async function fetchSubmission(
   id: string,
 ): Promise<SubmissionDetailResponse> {
-  return fetchJson<SubmissionDetailResponse>(`/submissions/${id}`);
+  return fetchJson<SubmissionDetailResponse>(submissionDetailPath(id));
+}
+
+const bestSubmissionDetailCache = new Map<string, Promise<SubmissionDetailResponse>>();
+
+function getCachedBestSubmissionDetail(id: string): Promise<SubmissionDetailResponse> {
+  const cached = bestSubmissionDetailCache.get(id);
+  if (cached) return cached;
+
+  const request = fetchJson<SubmissionDetailResponse>(submissionDetailPath(id));
+  bestSubmissionDetailCache.set(id, request);
+
+  // Keep cache lifetime aligned with ISR so homepage/best-for renders do not fan
+  // out identical detail reads while the rendered route is still fresh.
+  setTimeout(() => {
+    if (bestSubmissionDetailCache.get(id) === request) {
+      bestSubmissionDetailCache.delete(id);
+    }
+  }, SUBMISSION_DETAIL_REVALIDATE_SECONDS * 1000);
+
+  request.catch(() => {
+    if (bestSubmissionDetailCache.get(id) === request) {
+      bestSubmissionDetailCache.delete(id);
+    }
+  });
+
+  return request;
 }
 
 export async function fetchBestSubmissionDetails(
@@ -72,7 +103,7 @@ export async function fetchBestSubmissionDetails(
 ): Promise<ApiSubmissionDetail[]> {
   const uniqueIds = [...new Set(submissionIds.filter(Boolean))];
   const responses = await Promise.allSettled(
-    uniqueIds.map((id) => fetchSubmission(id)),
+    uniqueIds.map((id) => getCachedBestSubmissionDetail(id)),
   );
 
   return responses.flatMap((response) =>
