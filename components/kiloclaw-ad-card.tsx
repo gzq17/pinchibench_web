@@ -31,7 +31,7 @@ export function KiloClawAdCard() {
                             </p>
                         </div>
                         <p className="mt-1 flex-grow lg:min-w-[350px]">
-                            From $8/month
+                            $55/month
                             + AI inference at cost
                         </p>
                     </div>
