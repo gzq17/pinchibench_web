@@ -419,4 +419,5 @@ export const PROVIDER_COLORS: Record<string, string> = {
   stepfun: "#00D4AA",
   mistralai: "#FF7000",
   nvidia: "#76B900",
+  baidu: "#2932E1",
 };
