@@ -271,11 +271,7 @@ export function SimpleLeaderboard({
     return `/model/${resolvedProvider}/${model}${officialOnly ? '' : '?official=false'}`
   }
 
-  const entryHref = (entry: LeaderboardEntry) => (
-    entry.submission_id.startsWith('mock-')
-      ? submissionHref(entry.submission_id)
-      : modelHref(entry.provider, entry.model)
-  )
+  const entryHref = (entry: LeaderboardEntry) => modelHref(entry.provider, entry.model)
 
   const renderBadges = (entry: LeaderboardEntry) => {
     const badges = championBadges[entry.submission_id] ?? []
