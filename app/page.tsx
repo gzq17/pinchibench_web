@@ -3,7 +3,7 @@ import { fetchLeaderboard, fetchBenchmarkVersions, fetchTransformedBestSubmissio
 import { calculateRanks, transformLeaderboardEntry } from '@/lib/transforms'
 import { enrichEntriesWithSubmissions, getCategoryChampionBadges, getQuickRecommendations } from '@/lib/recommendations'
 import { LeaderboardView } from '@/components/leaderboard-view'
-import type { ApiLeaderboardEntry } from '@/lib/types'
+import { BAIDU_LEADERBOARD_ENTRY } from '@/lib/mock-data/baidu-ai-search'
 
 interface HomeProps {
   searchParams: Promise<{ version?: string; view?: string; official?: string }>

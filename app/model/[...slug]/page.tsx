@@ -15,29 +15,12 @@ import { ModelRunHistory } from '@/components/model-run-history'
 import { ModelScoreTrend } from '@/components/model-score-trend'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getScoreColorClass } from '@/lib/scores'
+import { BAIDU_MODEL_SUBMISSIONS, BAIDU_PROVIDER, BAIDU_MODEL_NAME } from '@/lib/mock-data/baidu-ai-search'
 
 // Mock model data for locally-added leaderboard entries.
 // Key format: "<provider>/<model>" (lowercase provider, exact model name).
 const MOCK_MODEL_DATA: Record<string, ModelSubmissionsResponse> = {
-  "baidu/Baidu AI Search": {
-    model: "Baidu AI Search",
-    benchmark_version: "unknown",
-    benchmark_versions: ["unknown"],
-    official_only: true,
-    submissions: [
-      {
-        id: "mock-id-001",
-        score_percentage: 0.947,
-        total_score: 140,
-        max_score: 148,
-        timestamp: "2026-07-08T00:00:00Z",
-        is_best: true,
-        total_cost_usd: 1.5,
-        total_execution_time_seconds: 120,
-        official: true,
-      },
-    ],
-  },
+  [`${BAIDU_PROVIDER.toLowerCase()}/${BAIDU_MODEL_NAME}`]: BAIDU_MODEL_SUBMISSIONS,
 }
 
 interface ModelPageProps {
