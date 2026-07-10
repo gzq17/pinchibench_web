@@ -13,10 +13,29 @@ import { TryKiloClawButton } from '@/components/try-kiloclaw-button'
 import { BadgeEmbedCard } from '@/components/badge-embed-card'
 import { getModelBadgeStatuses } from '@/lib/badges'
 import { PROVIDER_COLORS } from '@/lib/types'
+import type { ApiSubmissionDetail } from '@/lib/types'
 import { formatDistanceToNow } from 'date-fns'
 import { fetchSubmission } from '@/lib/api'
 import { transformSubmission } from '@/lib/transforms'
 import { aggregateCategoryScores } from '@/lib/category-scores'
+
+// Mock submissions for locally-added leaderboard entries.
+// Key must match the `best_submission_id` used in the mock leaderboard entry.
+const MOCK_SUBMISSIONS: Record<string, ApiSubmissionDetail> = {
+  "mock-id-001": {
+    id: "mock-id-001",
+    model: "my-custom-model",
+    provider: "openai",
+    timestamp: "2026-07-08T00:00:00Z",
+    openclaw_version: "1.0.0",
+    benchmark_version: "unknown",
+    total_score: 136,
+    max_score: 148,
+    official: true,
+    tasks: [],
+    metadata: { run_timestamp: 0, task_count: 148 },
+  },
+}
 
 interface SubmissionPageProps {
   params: Promise<{ id: string }>
@@ -29,7 +48,13 @@ export default async function SubmissionPage({ params, searchParams }: Submissio
   const officialOnly = official !== 'false'
   let submission
 
-  try {
+  if (id.startsWith("mock-")) {
+    const mockRaw = MOCK_SUBMISSIONS[id]
+    if (!mockRaw) notFound()
+    submission = transformSubmission(mockRaw)
+  }
+
+  if (!submission) try {
     const response = await fetchSubmission(id)
     submission = transformSubmission(
       response.submission,

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ArrowLeft, Activity } from 'lucide-react'
-import { PROVIDER_COLORS, type TaskResult } from '@/lib/types'
+import { PROVIDER_COLORS, type TaskResult, type ModelSubmissionsResponse } from '@/lib/types'
 import { fetchModelSubmissions, fetchSubmission } from '@/lib/api'
 import { getModelBadgeStatuses } from '@/lib/badges'
 import { ModelVarianceStats } from '@/components/model-variance-stats'
@@ -15,6 +15,30 @@ import { ModelRunHistory } from '@/components/model-run-history'
 import { ModelScoreTrend } from '@/components/model-score-trend'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getScoreColorClass } from '@/lib/scores'
+
+// Mock model data for locally-added leaderboard entries.
+// Key format: "<provider>/<model>" (lowercase provider, exact model name).
+const MOCK_MODEL_DATA: Record<string, ModelSubmissionsResponse> = {
+  "baidu/Baidu AI Search": {
+    model: "Baidu AI Search",
+    benchmark_version: "unknown",
+    benchmark_versions: ["unknown"],
+    official_only: true,
+    submissions: [
+      {
+        id: "mock-id-001",
+        score_percentage: 0.947,
+        total_score: 140,
+        max_score: 148,
+        timestamp: "2026-07-08T00:00:00Z",
+        is_best: true,
+        total_cost_usd: 1.5,
+        total_execution_time_seconds: 120,
+        official: true,
+      },
+    ],
+  },
+}
 
 interface ModelPageProps {
   params: Promise<{ slug: string[] }>
@@ -33,50 +57,57 @@ export default async function ModelPage({ params, searchParams }: ModelPageProps
   const provider = slug[0]
   const modelName = slug.slice(1).join('/')
 
-  // Try fetching with the parsed model name first.
-  // If that returns no results, retry with the full slug as the model name.
-  // This handles cases where provider was empty in the DB, causing URLs like
-  // /model/nvidia/nemotron-3-ultra-550b-a55b where "nvidia" is actually part
-  // of the model name, not the provider.
-  let modelData
+  // Check mock data first (key: "<provider>/<modelName>")
+  const mockKey = `${provider}/${modelName}`
+  let modelData: ModelSubmissionsResponse | null = MOCK_MODEL_DATA[mockKey] ?? null
   let resolvedModelName = modelName
-  try {
-    modelData = await fetchModelSubmissions(modelName, { officialOnly })
 
-    // Fallback: if no submissions found, try the full slug as model name
-    if ((!modelData || modelData.submissions.length === 0) && slug.length >= 2) {
-      const fullSlugAsModel = slug.join('/')
-      const fallbackData = await fetchModelSubmissions(fullSlugAsModel, { officialOnly })
-      if (fallbackData && fallbackData.submissions.length > 0) {
-        modelData = fallbackData
-        resolvedModelName = fullSlugAsModel
-      }
-    }
-  } catch (error) {
-    // If initial fetch threw, still try the fallback
+  if (!modelData) {
+    // Try fetching with the parsed model name first.
+    // If that returns no results, retry with the full slug as the model name.
+    // This handles cases where provider was empty in the DB, causing URLs like
+    // /model/nvidia/nemotron-3-ultra-550b-a55b where "nvidia" is actually part
+    // of the model name, not the provider.
     try {
-      const fullSlugAsModel = slug.join('/')
-      const fallbackData = await fetchModelSubmissions(fullSlugAsModel, { officialOnly })
-      if (fallbackData && fallbackData.submissions.length > 0) {
-        modelData = fallbackData
-        resolvedModelName = fullSlugAsModel
+      const fetched = await fetchModelSubmissions(modelName, { officialOnly })
+
+      if (fetched && fetched.submissions.length > 0) {
+        modelData = fetched
+      } else if (slug.length >= 2) {
+        // Fallback: try the full slug as model name
+        const fullSlugAsModel = slug.join('/')
+        const fallbackData = await fetchModelSubmissions(fullSlugAsModel, { officialOnly })
+        if (fallbackData && fallbackData.submissions.length > 0) {
+          modelData = fallbackData
+          resolvedModelName = fullSlugAsModel
+        }
       }
     } catch {
-      // Both attempts failed
-    }
+      // If initial fetch threw, still try the fallback
+      try {
+        const fullSlugAsModel = slug.join('/')
+        const fallbackData = await fetchModelSubmissions(fullSlugAsModel, { officialOnly })
+        if (fallbackData && fallbackData.submissions.length > 0) {
+          modelData = fallbackData
+          resolvedModelName = fullSlugAsModel
+        }
+      } catch {
+        // Both attempts failed
+      }
 
-    if (!modelData || modelData.submissions.length === 0) {
-      return (
-        <div className="min-h-screen bg-background p-6">
-          <Card className="max-w-4xl mx-auto p-6">
-            <h2 className="text-xl font-bold mb-4">Error loading model data</h2>
-            <p className="text-muted-foreground">Could not fetch submissions for {modelName}.</p>
-            <Link href="/">
-              <Button className="mt-4">Back to Leaderboard</Button>
-            </Link>
-          </Card>
-        </div>
-      )
+      if (!modelData) {
+        return (
+          <div className="min-h-screen bg-background p-6">
+            <Card className="max-w-4xl mx-auto p-6">
+              <h2 className="text-xl font-bold mb-4">Error loading model data</h2>
+              <p className="text-muted-foreground">Could not fetch submissions for {modelName}.</p>
+              <Link href="/">
+                <Button className="mt-4">Back to Leaderboard</Button>
+              </Link>
+            </Card>
+          </div>
+        )
+      }
     }
   }
 

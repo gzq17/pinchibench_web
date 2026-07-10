@@ -3,6 +3,7 @@ import { fetchLeaderboard, fetchBenchmarkVersions, fetchTransformedBestSubmissio
 import { calculateRanks, transformLeaderboardEntry } from '@/lib/transforms'
 import { enrichEntriesWithSubmissions, getCategoryChampionBadges, getQuickRecommendations } from '@/lib/recommendations'
 import { LeaderboardView } from '@/components/leaderboard-view'
+import type { ApiLeaderboardEntry } from '@/lib/types'
 
 interface HomeProps {
   searchParams: Promise<{ version?: string; view?: string; official?: string }>
@@ -53,7 +54,24 @@ export default async function Home({ searchParams }: HomeProps) {
     fetchLeaderboard(version, { officialOnly }),
     fetchBenchmarkVersions(),
   ])
-  const entries = calculateRanks(response.leaderboard.map(transformLeaderboardEntry))
+  const mockEntry: ApiLeaderboardEntry = {
+  model: "Baidu AI Search",
+  provider: "Baidu",
+  best_score_percentage: 0.947,     // 92%
+  latest_submission: "2026-07-08T00:00:00Z",//new Date().toISOString(),
+  best_submission_id: "mock-id-001",
+  submission_count: 1,
+  official: true,
+  // 可选字段
+  best_cost_usd: 1.5,
+  average_cost_usd: 1.5,
+  average_score_percentage: 0.9412,
+  best_execution_time_seconds: null,
+  average_execution_time_seconds: null,
+  weights: null,
+  hf_link: null,
+}
+  const entries = calculateRanks([...response.leaderboard.map(transformLeaderboardEntry), transformLeaderboardEntry(mockEntry)])
   const topCandidateIds = entries.slice(0, 40).map((entry) => entry.submission_id)
   const topSubmissions = await fetchTransformedBestSubmissions(topCandidateIds)
   const enrichedEntries = enrichEntriesWithSubmissions(entries, topSubmissions)
