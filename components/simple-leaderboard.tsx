@@ -271,6 +271,12 @@ export function SimpleLeaderboard({
     return `/model/${resolvedProvider}/${model}${officialOnly ? '' : '?official=false'}`
   }
 
+  const entryHref = (entry: LeaderboardEntry) => (
+    entry.submission_id.startsWith('mock-')
+      ? submissionHref(entry.submission_id)
+      : modelHref(entry.provider, entry.model)
+  )
+
   const renderBadges = (entry: LeaderboardEntry) => {
     const badges = championBadges[entry.submission_id] ?? []
     if (badges.length === 0) return null
@@ -372,7 +378,7 @@ export function SimpleLeaderboard({
                         <span className="text-sm font-medium text-muted-foreground">{index + 1}</span>
                       </td>
                       <td className="px-2 md:px-4 py-3">
-                        <Link href={modelHref(entry.provider, entry.model)} className="flex items-center gap-2 transition-colors">
+                        <Link href={entryHref(entry)} className="flex items-center gap-2 transition-colors">
                           <code className="text-xs md:text-sm font-mono truncate max-w-[150px] md:max-w-none hover:text-primary transition-colors cursor-pointer">{entry.model}</code>
                         </Link>
                       </td>
@@ -417,7 +423,7 @@ export function SimpleLeaderboard({
                   <tr key={entry.submission_id} className="text-muted-foreground opacity-60">
                     <td className="px-2 md:px-4 py-3">--</td>
                     <td className="px-2 md:px-4 py-3">
-                      <Link href={modelHref(entry.provider, entry.model)}>
+                      <Link href={entryHref(entry)}>
                         <code className="text-xs md:text-sm font-mono truncate max-w-[150px] md:max-w-none hover:text-primary transition-colors cursor-pointer">{entry.model}</code>
                       </Link>
                     </td>
@@ -556,7 +562,7 @@ export function SimpleLeaderboard({
                   <Tooltip key={entry.submission_id}>
                     <TooltipTrigger asChild>
                       <Link
-                        href={modelHref(entry.provider, entry.model)}
+                        href={entryHref(entry)}
                         className="block group"
                       >
                         <div className="flex items-center gap-3">
@@ -767,7 +773,7 @@ export function SimpleLeaderboard({
                     >
                       <td className="px-2 md:px-4 py-3">
                         <Link
-                          href={modelHref(entry.provider, entry.model)}
+                          href={entryHref(entry)}
                           className="flex items-center gap-2 transition-colors"
                         >
                           <span className="text-lg">{getCrabEmoji(entry.rank)}</span>
@@ -940,7 +946,7 @@ export function SimpleLeaderboard({
                   </td>
                   <td className="px-2 md:px-4 py-3">
                     <Link
-                      href={modelHref(entry.provider, entry.model)}
+                      href={entryHref(entry)}
                       className="flex items-center gap-2 transition-colors"
                     >
                       <code className="text-xs md:text-sm font-mono truncate max-w-[150px] md:max-w-none">{entry.model}</code>
@@ -976,7 +982,7 @@ export function SimpleLeaderboard({
                   <td className="px-2 md:px-4 py-3">--</td>
                   <td className="px-2 md:px-4 py-3">
                     <Link
-                      href={modelHref(entry.provider, entry.model)}
+                      href={entryHref(entry)}
                       className="flex items-center gap-2 transition-colors"
                     >
                       <code className="text-xs md:text-sm font-mono truncate max-w-[150px] md:max-w-none">{entry.model}</code>

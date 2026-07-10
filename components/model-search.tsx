@@ -30,10 +30,10 @@ export function ModelSearch({ entries, officialOnly, searchValue, onSearchChange
   const inputRef = React.useRef<HTMLInputElement>(null)
 
   const uniqueModels = React.useMemo(() => {
-    const models = new Map<string, { model: string; provider: string }>()
+    const models = new Map<string, { model: string; provider: string; submissionId: string }>()
     entries.forEach((e) => {
       if (!models.has(e.model)) {
-        models.set(e.model, { model: e.model, provider: e.provider })
+        models.set(e.model, { model: e.model, provider: e.provider, submissionId: e.submission_id })
       }
     })
     return Array.from(models.values())
@@ -87,6 +87,12 @@ export function ModelSearch({ entries, officialOnly, searchValue, onSearchChange
                       key={m.model}
                       value={m.model}
                       onSelect={() => {
+                        if (m.submissionId.startsWith('mock-')) {
+                          router.push(`/submission/${m.submissionId}${officialOnly ? '' : '?official=false'}`)
+                          setOpen(false)
+                          return
+                        }
+
                         const provider = m.provider?.trim()
                           ? m.provider.toLowerCase()
                           : m.model.split('/')[0]?.toLowerCase() || 'unknown'

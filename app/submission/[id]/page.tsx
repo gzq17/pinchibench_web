@@ -24,12 +24,12 @@ import { aggregateCategoryScores } from '@/lib/category-scores'
 const MOCK_SUBMISSIONS: Record<string, ApiSubmissionDetail> = {
   "mock-id-001": {
     id: "mock-id-001",
-    model: "my-custom-model",
-    provider: "openai",
+    model: "Baidu AI Search",
+    provider: "Baidu",
     timestamp: "2026-07-08T00:00:00Z",
     openclaw_version: "1.0.0",
     benchmark_version: "unknown",
-    total_score: 136,
+    total_score: 140,
     max_score: 148,
     official: true,
     tasks: [],
