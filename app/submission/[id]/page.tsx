@@ -35,6 +35,7 @@ const MOCK_SUBMISSIONS: Record<string, ApiSubmissionDetail> = {
     tasks: [],
     metadata: { run_timestamp: 0, task_count: 148 },
   },
+  
 }
 
 interface SubmissionPageProps {
