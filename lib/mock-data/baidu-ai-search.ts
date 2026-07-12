@@ -29,8 +29,8 @@ export const BAIDU_BENCHMARK_VERSION = 'v2.0'
 // 2. Scores
 // ---------------------------------------------------------------------------
 
-export const BAIDU_TOTAL_SCORE = 35.6    // replace with actual total score (1.0-scale per task)
-export const BAIDU_MAX_SCORE = 38        // replace with actual max possible score (38 tasks × 1.0)
+export const BAIDU_TOTAL_SCORE = 356    // replace with actual total score
+export const BAIDU_MAX_SCORE = 380      // replace with actual max possible score
 /** 0-1 range, e.g. 0.947 = 94.7 % */
 export const BAIDU_BEST_SCORE_PERCENTAGE = BAIDU_TOTAL_SCORE / BAIDU_MAX_SCORE
 export const BAIDU_AVERAGE_SCORE_PERCENTAGE = 0.9412
@@ -78,58 +78,58 @@ export const BAIDU_SYSTEM_INFO = {
 
 export const BAIDU_TASKS: ApiSubmissionDetail['tasks'] = [
   // ── core_agent (7 tasks) ────────────────────────────────────────────────
-  { task_id: 'task_00_sanity',            score: 1.0, max_score: 1.0, breakdown: { correctness: 1.0 }, grading_type: 'automated', timed_out: false, frontmatter: { name: 'Sanity Check',           category: 'core_agent' } },
-  { task_id: 'task_08_memory',            score: 0.9, max_score: 1.0, breakdown: { recall: 0.9 },       grading_type: 'automated', timed_out: false, frontmatter: { name: 'Memory Retrieval',       category: 'core_agent' } },
-  { task_id: 'task_09_files',             score: 1.0, max_score: 1.0, breakdown: { file_ops: 1.0 },    grading_type: 'automated', timed_out: false, frontmatter: { name: 'File Operations',        category: 'core_agent' } },
-  { task_id: 'task_10_workflow',          score: 0.8, max_score: 1.0, breakdown: { steps: 0.8 },        grading_type: 'hybrid',    timed_out: false, frontmatter: { name: 'Multi-step Workflow',    category: 'core_agent' } },
-  { task_id: 'task_openclaw_comprehension', score: 0.9, max_score: 1.0, breakdown: { comprehension: 0.9 }, grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'OpenClaw Comprehension', category: 'core_agent' } },
-  { task_id: 'task_second_brain',         score: 0.8, max_score: 1.0, breakdown: { retrieval: 0.8 },   grading_type: 'hybrid',    timed_out: false, frontmatter: { name: 'Second Brain',           category: 'core_agent' } },
-  { task_id: 'task_context_tracking',     score: 0.9, max_score: 1.0, breakdown: { context: 0.9 },     grading_type: 'automated', timed_out: false, frontmatter: { name: 'Context Tracking',       category: 'core_agent' } },
+  { task_id: 'task_00_sanity',            score: 10, max_score: 10, breakdown: { correctness: 10 }, grading_type: 'automated', timed_out: false, frontmatter: { name: 'Sanity Check',           category: 'core_agent' } },
+  { task_id: 'task_08_memory',            score:  9, max_score: 10, breakdown: { recall: 9 },        grading_type: 'automated', timed_out: false, frontmatter: { name: 'Memory Retrieval',       category: 'core_agent' } },
+  { task_id: 'task_09_files',             score: 10, max_score: 10, breakdown: { file_ops: 10 },     grading_type: 'automated', timed_out: false, frontmatter: { name: 'File Operations',        category: 'core_agent' } },
+  { task_id: 'task_10_workflow',          score:  8, max_score: 10, breakdown: { steps: 8 },          grading_type: 'hybrid',    timed_out: false, frontmatter: { name: 'Multi-step Workflow',    category: 'core_agent' } },
+  { task_id: 'task_openclaw_comprehension', score: 9, max_score: 10, breakdown: { comprehension: 9 }, grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'OpenClaw Comprehension', category: 'core_agent' } },
+  { task_id: 'task_second_brain',         score:  8, max_score: 10, breakdown: { retrieval: 8 },     grading_type: 'hybrid',    timed_out: false, frontmatter: { name: 'Second Brain',           category: 'core_agent' } },
+  { task_id: 'task_context_tracking',     score:  9, max_score: 10, breakdown: { context: 9 },       grading_type: 'automated', timed_out: false, frontmatter: { name: 'Context Tracking',       category: 'core_agent' } },
 
   // ── code_devops (8 tasks) ───────────────────────────────────────────────
-  { task_id: 'task_04_weather',              score: 1.0, max_score: 1.0, breakdown: { correctness: 1.0 }, grading_type: 'automated', timed_out: false, frontmatter: { name: 'Weather Script',          category: 'code_devops' } },
-  { task_id: 'task_test_generation',         score: 0.9, max_score: 1.0, breakdown: { coverage: 0.9 },    grading_type: 'automated', timed_out: false, frontmatter: { name: 'Test Generation',         category: 'code_devops' } },
-  { task_id: 'task_k8s_debugging',           score: 0.8, max_score: 1.0, breakdown: { diagnosis: 0.8 },   grading_type: 'automated', timed_out: false, frontmatter: { name: 'K8s Debugging',           category: 'code_devops' } },
-  { task_id: 'task_cicd_pipeline_debug',     score: 0.9, max_score: 1.0, breakdown: { fix: 0.9 },         grading_type: 'automated', timed_out: false, frontmatter: { name: 'CI/CD Pipeline Debug',    category: 'code_devops' } },
-  { task_id: 'task_dockerfile_optimization', score: 1.0, max_score: 1.0, breakdown: { optimization: 1.0 }, grading_type: 'automated', timed_out: false, frontmatter: { name: 'Dockerfile Optimization', category: 'code_devops' } },
-  { task_id: 'task_selector_fix',            score: 0.8, max_score: 1.0, breakdown: { accuracy: 0.8 },    grading_type: 'automated', timed_out: false, frontmatter: { name: 'Selector Fix',            category: 'code_devops' } },
-  { task_id: 'task_multi_file_refactoring',  score: 0.9, max_score: 1.0, breakdown: { quality: 0.9 },     grading_type: 'hybrid',    timed_out: false, frontmatter: { name: 'Multi-file Refactoring',  category: 'code_devops' } },
-  { task_id: 'task_git_rescue_recovery',     score: 0.8, max_score: 1.0, breakdown: { recovery: 0.8 },    grading_type: 'automated', timed_out: false, frontmatter: { name: 'Git Rescue Recovery',     category: 'code_devops' } },
+  { task_id: 'task_04_weather',              score: 10, max_score: 10, breakdown: { correctness: 10 },  grading_type: 'automated', timed_out: false, frontmatter: { name: 'Weather Script',          category: 'code_devops' } },
+  { task_id: 'task_test_generation',         score:  9, max_score: 10, breakdown: { coverage: 9 },      grading_type: 'automated', timed_out: false, frontmatter: { name: 'Test Generation',         category: 'code_devops' } },
+  { task_id: 'task_k8s_debugging',           score:  8, max_score: 10, breakdown: { diagnosis: 8 },     grading_type: 'automated', timed_out: false, frontmatter: { name: 'K8s Debugging',           category: 'code_devops' } },
+  { task_id: 'task_cicd_pipeline_debug',     score:  9, max_score: 10, breakdown: { fix: 9 },           grading_type: 'automated', timed_out: false, frontmatter: { name: 'CI/CD Pipeline Debug',    category: 'code_devops' } },
+  { task_id: 'task_dockerfile_optimization', score: 10, max_score: 10, breakdown: { optimization: 10 }, grading_type: 'automated', timed_out: false, frontmatter: { name: 'Dockerfile Optimization', category: 'code_devops' } },
+  { task_id: 'task_selector_fix',            score:  8, max_score: 10, breakdown: { accuracy: 8 },      grading_type: 'automated', timed_out: false, frontmatter: { name: 'Selector Fix',            category: 'code_devops' } },
+  { task_id: 'task_multi_file_refactoring',  score:  9, max_score: 10, breakdown: { quality: 9 },       grading_type: 'hybrid',    timed_out: false, frontmatter: { name: 'Multi-file Refactoring',  category: 'code_devops' } },
+  { task_id: 'task_git_rescue_recovery',     score:  8, max_score: 10, breakdown: { recovery: 8 },      grading_type: 'automated', timed_out: false, frontmatter: { name: 'Git Rescue Recovery',     category: 'code_devops' } },
 
   // ── data_analysis (4 tasks) ─────────────────────────────────────────────
-  { task_id: 'task_02_stock',                     score: 0.9, max_score: 1.0, breakdown: { accuracy: 0.9 },    grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Stock Research',              category: 'data_analysis' } },
-  { task_id: 'task_spreadsheet_summary',          score: 1.0, max_score: 1.0, breakdown: { summary: 1.0 },     grading_type: 'automated', timed_out: false, frontmatter: { name: 'Spreadsheet Summary',         category: 'data_analysis' } },
-  { task_id: 'task_financial_ratio_calculation',  score: 0.9, max_score: 1.0, breakdown: { calculation: 0.9 }, grading_type: 'automated', timed_out: false, frontmatter: { name: 'Financial Ratio Calculation', category: 'data_analysis' } },
-  { task_id: 'task_earnings_analysis',            score: 0.8, max_score: 1.0, breakdown: { insight: 0.8 },     grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Earnings Analysis',           category: 'data_analysis' } },
+  { task_id: 'task_02_stock',                     score:  9, max_score: 10, breakdown: { accuracy: 9 },     grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Stock Research',              category: 'data_analysis' } },
+  { task_id: 'task_spreadsheet_summary',          score: 10, max_score: 10, breakdown: { summary: 10 },     grading_type: 'automated', timed_out: false, frontmatter: { name: 'Spreadsheet Summary',         category: 'data_analysis' } },
+  { task_id: 'task_financial_ratio_calculation',  score:  9, max_score: 10, breakdown: { calculation: 9 },  grading_type: 'automated', timed_out: false, frontmatter: { name: 'Financial Ratio Calculation', category: 'data_analysis' } },
+  { task_id: 'task_earnings_analysis',            score:  8, max_score: 10, breakdown: { insight: 8 },      grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Earnings Analysis',           category: 'data_analysis' } },
 
   // ── writing_content (5 tasks) ───────────────────────────────────────────
-  { task_id: 'task_03_blog',           score: 0.9, max_score: 1.0, breakdown: { quality: 0.9 },      grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Blog Post',          category: 'writing_content' } },
-  { task_id: 'task_05_summary',        score: 1.0, max_score: 1.0, breakdown: { conciseness: 1.0 },  grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Document Summary',   category: 'writing_content' } },
-  { task_id: 'task_humanizer',         score: 0.9, max_score: 1.0, breakdown: { fluency: 0.9 },      grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Humanizer',          category: 'writing_content' } },
-  { task_id: 'task_readme_generation', score: 1.0, max_score: 1.0, breakdown: { completeness: 1.0 }, grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'README Generation',  category: 'writing_content' } },
-  { task_id: 'task_eli5_pdf_summary',  score: 0.9, max_score: 1.0, breakdown: { clarity: 0.9 },      grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'ELI5 PDF Summary',  category: 'writing_content' } },
+  { task_id: 'task_03_blog',          score:  9, max_score: 10, breakdown: { quality: 9 },      grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Blog Post',         category: 'writing_content' } },
+  { task_id: 'task_05_summary',       score: 10, max_score: 10, breakdown: { conciseness: 10 }, grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Document Summary',  category: 'writing_content' } },
+  { task_id: 'task_humanizer',        score:  9, max_score: 10, breakdown: { fluency: 9 },      grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Humanizer',         category: 'writing_content' } },
+  { task_id: 'task_readme_generation', score: 10, max_score: 10, breakdown: { completeness: 10 }, grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'README Generation', category: 'writing_content' } },
+  { task_id: 'task_eli5_pdf_summary', score:  9, max_score: 10, breakdown: { clarity: 9 },      grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'ELI5 PDF Summary', category: 'writing_content' } },
 
   // ── productivity (4 tasks) ──────────────────────────────────────────────
-  { task_id: 'task_01_calendar',       score: 1.0, max_score: 1.0, breakdown: { correctness: 1.0 }, grading_type: 'automated', timed_out: false, frontmatter: { name: 'Calendar Event',    category: 'productivity' } },
-  { task_id: 'task_07_email',          score: 0.9, max_score: 1.0, breakdown: { quality: 0.9 },     grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Email Draft',       category: 'productivity' } },
-  { task_id: 'task_todo_list_cleanup', score: 1.0, max_score: 1.0, breakdown: { accuracy: 1.0 },    grading_type: 'automated', timed_out: false, frontmatter: { name: 'Todo List Cleanup', category: 'productivity' } },
-  { task_id: 'task_pdf_to_calendar',   score: 0.8, max_score: 1.0, breakdown: { extraction: 0.8 },  grading_type: 'automated', timed_out: false, frontmatter: { name: 'PDF to Calendar',   category: 'productivity' } },
+  { task_id: 'task_01_calendar',       score: 10, max_score: 10, breakdown: { correctness: 10 }, grading_type: 'automated', timed_out: false, frontmatter: { name: 'Calendar Event',    category: 'productivity' } },
+  { task_id: 'task_07_email',          score:  9, max_score: 10, breakdown: { quality: 9 },      grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Email Draft',       category: 'productivity' } },
+  { task_id: 'task_todo_list_cleanup', score: 10, max_score: 10, breakdown: { accuracy: 10 },    grading_type: 'automated', timed_out: false, frontmatter: { name: 'Todo List Cleanup', category: 'productivity' } },
+  { task_id: 'task_pdf_to_calendar',   score:  8, max_score: 10, breakdown: { extraction: 8 },   grading_type: 'automated', timed_out: false, frontmatter: { name: 'PDF to Calendar',   category: 'productivity' } },
 
   // ── research_knowledge (5 tasks) ────────────────────────────────────────
-  { task_id: 'task_06_events',         score: 0.9, max_score: 1.0, breakdown: { relevance: 0.9 },   grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Events Research',   category: 'research_knowledge' } },
-  { task_id: 'task_market_research',   score: 1.0, max_score: 1.0, breakdown: { depth: 1.0 },       grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Market Research',   category: 'research_knowledge' } },
-  { task_id: 'task_executive_lookup',  score: 0.9, max_score: 1.0, breakdown: { accuracy: 0.9 },    grading_type: 'automated', timed_out: false, frontmatter: { name: 'Executive Lookup',  category: 'research_knowledge' } },
-  { task_id: 'task_contract_analysis', score: 0.8, max_score: 1.0, breakdown: { extraction: 0.8 },  grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Contract Analysis', category: 'research_knowledge' } },
-  { task_id: 'task_skill_search',      score: 0.9, max_score: 1.0, breakdown: { relevance: 0.9 },   grading_type: 'automated', timed_out: false, frontmatter: { name: 'Skill Search',      category: 'research_knowledge' } },
+  { task_id: 'task_06_events',        score:  9, max_score: 10, breakdown: { relevance: 9 },  grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Events Research',    category: 'research_knowledge' } },
+  { task_id: 'task_market_research',  score: 10, max_score: 10, breakdown: { depth: 10 },     grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Market Research',    category: 'research_knowledge' } },
+  { task_id: 'task_executive_lookup', score:  9, max_score: 10, breakdown: { accuracy: 9 },   grading_type: 'automated', timed_out: false, frontmatter: { name: 'Executive Lookup',   category: 'research_knowledge' } },
+  { task_id: 'task_contract_analysis', score: 8, max_score: 10, breakdown: { extraction: 8 }, grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Contract Analysis',  category: 'research_knowledge' } },
+  { task_id: 'task_skill_search',     score:  9, max_score: 10, breakdown: { relevance: 9 },  grading_type: 'automated', timed_out: false, frontmatter: { name: 'Skill Search',       category: 'research_knowledge' } },
 
   // ── security_ops (3 tasks) ──────────────────────────────────────────────
-  { task_id: 'task_access_log_anomaly',  score: 0.9, max_score: 1.0, breakdown: { detection: 0.9 },      grading_type: 'automated', timed_out: false, frontmatter: { name: 'Access Log Anomaly',  category: 'security_ops' } },
-  { task_id: 'task_cve_security_triage', score: 1.0, max_score: 1.0, breakdown: { triage: 1.0 },         grading_type: 'hybrid',    timed_out: false, frontmatter: { name: 'CVE Security Triage', category: 'security_ops' } },
-  { task_id: 'task_gh_issue_triage',     score: 0.9, max_score: 1.0, breakdown: { classification: 0.9 }, grading_type: 'hybrid',    timed_out: false, frontmatter: { name: 'GitHub Issue Triage', category: 'security_ops' } },
+  { task_id: 'task_access_log_anomaly', score:  9, max_score: 10, breakdown: { detection: 9 },       grading_type: 'automated', timed_out: false, frontmatter: { name: 'Access Log Anomaly', category: 'security_ops' } },
+  { task_id: 'task_cve_security_triage', score: 10, max_score: 10, breakdown: { triage: 10 },        grading_type: 'hybrid',    timed_out: false, frontmatter: { name: 'CVE Security Triage', category: 'security_ops' } },
+  { task_id: 'task_gh_issue_triage',    score:  9, max_score: 10, breakdown: { classification: 9 },  grading_type: 'hybrid',    timed_out: false, frontmatter: { name: 'GitHub Issue Triage', category: 'security_ops' } },
 
   // ── creative (2 tasks) ──────────────────────────────────────────────────
-  { task_id: 'task_image_gen',            score: 0.8, max_score: 1.0, breakdown: { quality: 0.8 },  grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Image Generation',    category: 'creative' } },
-  { task_id: 'task_image_identification', score: 0.9, max_score: 1.0, breakdown: { accuracy: 0.9 }, grading_type: 'automated', timed_out: false, frontmatter: { name: 'Image Identification', category: 'creative' } },
+  { task_id: 'task_image_gen',            score: 8, max_score: 10, breakdown: { quality: 8 },   grading_type: 'llm_judge', timed_out: false, frontmatter: { name: 'Image Generation',   category: 'creative' } },
+  { task_id: 'task_image_identification', score: 9, max_score: 10, breakdown: { accuracy: 9 },  grading_type: 'automated', timed_out: false, frontmatter: { name: 'Image Identification', category: 'creative' } },
 ]
 
 // ---------------------------------------------------------------------------
@@ -197,4 +197,3 @@ export const BAIDU_MODEL_SUBMISSIONS: ModelSubmissionsResponse = {
     },
   ],
 }
-
