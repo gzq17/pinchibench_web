@@ -37,4 +37,4 @@ def adjust_json():
         json.dump(new_data, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
-    data_process()
+    adjust_json()
