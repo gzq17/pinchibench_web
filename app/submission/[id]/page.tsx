@@ -96,7 +96,7 @@ export default async function SubmissionPage({ params, searchParams }: Submissio
 
   // Build the synthetic "submissions list" that model-page components expect
   const submissionsForComponents = [{
-    id: submission.submission_id,
+    id: "version_1",//submission.submission_id
     score_percentage: 0.9512,
     total_score: submission.total_score,
     max_score: submission.max_score,
@@ -107,7 +107,7 @@ export default async function SubmissionPage({ params, searchParams }: Submissio
     official: submission.official,
   },
   {
-    id: submission.submission_id,
+    id: "version_2",
     score_percentage: 0.9312,
     total_score: submission.total_score,
     max_score: submission.max_score,
@@ -118,7 +118,7 @@ export default async function SubmissionPage({ params, searchParams }: Submissio
     official: submission.official,
   },
   {
-    id: submission.submission_id,
+    id: "version_3",
     score_percentage: 0.9412,
     total_score: submission.total_score,
     max_score: submission.max_score,
