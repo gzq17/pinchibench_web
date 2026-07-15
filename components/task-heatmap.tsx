@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { LeaderboardEntry } from '@/lib/types'
+import type { LeaderboardEntry, ApiSubmissionDetail, TaskResult } from '@/lib/types'
 import { PROVIDER_COLORS } from '@/lib/types'
 import { fetchSubmissionClient } from '@/lib/api'
 import { transformSubmission } from '@/lib/transforms'
+import { BAIDU_SUBMISSION_DETAIL } from '@/lib/mock-data/baidu-ai-search'
 import { ShareableWrapper } from '@/components/shareable-wrapper'
 import { CategoryPills } from '@/components/category-pills'
 import { getCategoryMeta } from '@/lib/category-scores'
@@ -14,6 +15,12 @@ interface TaskHeatmapProps {
   entries: LeaderboardEntry[]
   selectedCategories: string[]
   onCategoriesChange: (categories: string[]) => void
+  /**
+   * Server-fetched task results keyed by submission_id. Used to build the
+   * heatmap without a client-side per-submission fetch (blocked by CORS in
+   * most environments). Entries not present here fall back to a client fetch.
+   */
+  seededTaskData?: Record<string, TaskResult[]>
 }
 
 interface TaskInfo {
@@ -40,6 +47,12 @@ interface SerializedCache {
 }
 
 const SESSION_STORAGE_KEY = 'pinchbench_heatmap_cache'
+
+// Mock submissions are not served by the API. Resolve their task-level data
+// locally so locally-injected models still render in the heatmap.
+const MOCK_SUBMISSION_DETAILS: Record<string, ApiSubmissionDetail> = {
+  [BAIDU_SUBMISSION_DETAIL.id]: BAIDU_SUBMISSION_DETAIL,
+}
 
 /** Load cache from sessionStorage (returns empty object if none) */
 function loadCacheFromSession(): SerializedCache {
@@ -90,7 +103,21 @@ function getScoreTextColor(ratio: number): string {
   return 'hsl(0, 70%, 75%)'
 }
 
-export function TaskHeatmap({ entries, selectedCategories, onCategoriesChange }: TaskHeatmapProps) {
+/** Build the heatmap row model from a list of task results. */
+function buildTaskRecord(tasks: TaskResult[]): Record<string, TaskInfo> {
+  const taskRecord: Record<string, TaskInfo> = {}
+  for (const task of tasks) {
+    taskRecord[task.task_id] = {
+      score: task.score,
+      maxScore: task.max_score,
+      taskName: task.task_name,
+      category: task.category,
+    }
+  }
+  return taskRecord
+}
+
+export function TaskHeatmap({ entries, selectedCategories, onCategoriesChange, seededTaskData }: TaskHeatmapProps) {
   const [modelData, setModelData] = useState<ModelTaskData[]>([])
   // loadingState tracks the load phase:
   // - 'idle': no load in progress
@@ -142,9 +169,24 @@ export function TaskHeatmap({ entries, selectedCategories, onCategoriesChange }:
         const cached = currentCache[entry.submission_id]
         if (cached) {
           initialData.push(cached)
-        } else {
-          uncached.push(entry)
+          continue
         }
+        // Prefer server-seeded task data (CORS-safe) before falling back to a
+        // client fetch. Covers mock/injected models too, since their task data
+        // is bundled into the seed by the parent.
+        const seeded = seededTaskData?.[entry.submission_id]
+        if (seeded && seeded.length > 0) {
+          const built: ModelTaskData = {
+            model: entry.model,
+            provider: entry.provider,
+            percentage: entry.percentage,
+            tasks: buildTaskRecord(seeded),
+          }
+          currentCache[entry.submission_id] = built
+          initialData.push(built)
+          continue
+        }
+        uncached.push(entry)
       }
 
       // If all entries are cached, apply data immediately
@@ -182,19 +224,17 @@ export function TaskHeatmap({ entries, selectedCategories, onCategoriesChange }:
           const batchResults = await Promise.all(
             batch.map(async (entry): Promise<ModelTaskData | null> => {
               try {
-                const response = await fetchSubmissionClient(entry.submission_id)
-                if (cancelledRef.current) return null
-                const submission = transformSubmission(response.submission)
-
-                const taskRecord: Record<string, TaskInfo> = {}
-                for (const task of submission.task_results) {
-                  taskRecord[task.task_id] = {
-                    score: task.score,
-                    maxScore: task.max_score,
-                    taskName: task.task_name,
-                    category: task.category,
-                  }
+                const mockDetail = MOCK_SUBMISSION_DETAILS[entry.submission_id]
+                let submission
+                if (mockDetail) {
+                  submission = transformSubmission(mockDetail)
+                } else {
+                  const response = await fetchSubmissionClient(entry.submission_id)
+                  if (cancelledRef.current) return null
+                  submission = transformSubmission(response.submission)
                 }
+
+                const taskRecord = buildTaskRecord(submission.task_results)
 
                 const result: ModelTaskData = {
                   model: entry.model,
@@ -245,7 +285,7 @@ export function TaskHeatmap({ entries, selectedCategories, onCategoriesChange }:
 
     loadData()
     return () => { cancelledRef.current = true }
-  }, [entries])
+  }, [entries, seededTaskData])
 
   // Collect all unique tasks and sort by category
   const allTasks = useMemo(() => {

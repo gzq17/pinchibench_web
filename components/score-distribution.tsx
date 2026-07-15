@@ -13,6 +13,7 @@ import {
 import type { LeaderboardEntry, ApiSubmissionListItem } from '@/lib/types'
 import { PROVIDER_COLORS } from '@/lib/types'
 import { fetchSubmissionsClient } from '@/lib/api'
+import { BAIDU_DISTRIBUTION_SUBMISSIONS } from '@/lib/mock-data/baidu-ai-search'
 import { ShareableWrapper } from '@/components/shareable-wrapper'
 
 interface ScoreDistributionProps {
@@ -20,6 +21,8 @@ interface ScoreDistributionProps {
   scoreMode: 'best' | 'average'
   currentVersion: string | null
   officialOnly: boolean
+  /** Server-fetched submissions list. Preferred over a client fetch (CORS-safe). */
+  initialSubmissions?: ApiSubmissionListItem[]
 }
 
 interface BoxPlotData {
@@ -155,7 +158,7 @@ function BoxPlotTooltip({ active, payload }: {
   )
 }
 
-export function ScoreDistribution({ entries, scoreMode, currentVersion, officialOnly }: ScoreDistributionProps) {
+export function ScoreDistribution({ entries, scoreMode, currentVersion, officialOnly, initialSubmissions = [] }: ScoreDistributionProps) {
   const [submissions, setSubmissions] = useState<ApiSubmissionListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -168,15 +171,29 @@ export function ScoreDistribution({ entries, scoreMode, currentVersion, official
       setLoading(true)
       setError(null)
 
+      // Prefer server-provided submissions. The browser usually cannot reach the
+      // API directly (CORS), so a client fetch is only a fallback.
+      if (initialSubmissions.length > 0) {
+        if (!cancelled) {
+          setSubmissions([...BAIDU_DISTRIBUTION_SUBMISSIONS, ...initialSubmissions])
+          setLoading(false)
+        }
+        return
+      }
+
       try {
         const response = await fetchSubmissionsClient(currentVersion ?? undefined, 500, { officialOnly })
         if (!cancelled) {
-          setSubmissions(response.submissions)
+          // Merge locally-bundled mock runs (not served by the API) so injected
+          // models appear alongside real ones in the distribution.
+          setSubmissions([...BAIDU_DISTRIBUTION_SUBMISSIONS, ...response.submissions])
           setLoading(false)
         }
       } catch {
         if (!cancelled) {
-          setError('Failed to load submission data')
+          // API unreachable — still surface the locally-bundled mock so the
+          // injected model renders instead of an error screen.
+          setSubmissions(BAIDU_DISTRIBUTION_SUBMISSIONS)
           setLoading(false)
         }
       }
@@ -184,7 +201,7 @@ export function ScoreDistribution({ entries, scoreMode, currentVersion, official
 
     loadData()
     return () => { cancelled = true }
-  }, [currentVersion, officialOnly])
+  }, [currentVersion, officialOnly, initialSubmissions])
 
   const boxPlotData = useMemo(() => {
     // Group submissions by model

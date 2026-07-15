@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import type { ApiLeaderboardEntry } from '@/lib/types'
-import { fetchLeaderboard, fetchBenchmarkVersions, fetchTransformedBestSubmissions } from '@/lib/api'
+import { fetchLeaderboard, fetchBenchmarkVersions, fetchTransformedBestSubmissions, fetchSubmissions } from '@/lib/api'
 import { calculateRanks, transformLeaderboardEntry, transformSubmission } from '@/lib/transforms'
 import { enrichEntriesWithSubmissions, getCategoryChampionBadges, getQuickRecommendations } from '@/lib/recommendations'
 import { LeaderboardView } from '@/components/leaderboard-view'
@@ -51,9 +51,13 @@ export async function generateMetadata({ searchParams }: HomeProps): Promise<Met
 export default async function Home({ searchParams }: HomeProps) {
   const { version, official } = await searchParams
   const officialOnly = official !== 'false'
-  const [response, versionsResponse] = await Promise.all([
+  const [response, versionsResponse, submissionsResponse] = await Promise.all([
     fetchLeaderboard(version, { officialOnly }),
     fetchBenchmarkVersions(),
+    // Fetch the full submissions list on the server so the Score Distribution
+    // graph does not depend on a client-side fetch (blocked by CORS in many
+    // environments). Tolerate failure so the page still renders.
+    fetchSubmissions(version, 500, 0, { officialOnly }).catch(() => null),
   ])
   const mockEntry: ApiLeaderboardEntry = {
   model: "Baidu AI Search",
@@ -119,6 +123,7 @@ export default async function Home({ searchParams }: HomeProps) {
       championBadges={championBadges}
       maxTaskCount={maxTaskCount}
       initialTaskData={initialTaskData}
+      initialSubmissions={submissionsResponse?.submissions ?? []}
     />
   )
 }
