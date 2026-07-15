@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import type { BestForBadge, LeaderboardEntry, BenchmarkVersion, RecommendationPick, SortMode, TaskResult } from '@/lib/types'
+import type { BestForBadge, LeaderboardEntry, BenchmarkVersion, RecommendationPick, SortMode, TaskResult, ApiSubmissionListItem } from '@/lib/types'
 import { PROVIDER_COLORS } from '@/lib/types'
 import { fetchSubmissionClient } from '@/lib/api'
 import { calculateCategoryFilteredScore, calculateRanksByPercentage } from '@/lib/category-scores'
@@ -57,9 +57,12 @@ interface LeaderboardViewProps {
     // scores so the sub-leaderboard does not depend on client-side per-submission
     // fetches (which are blocked by CORS in most environments).
     initialTaskData?: Record<string, TaskResult[]>
+    // Full submissions list fetched on the server. Seeds the Score Distribution
+    // graph so it does not depend on a client-side fetch (CORS-blocked).
+    initialSubmissions?: ApiSubmissionListItem[]
 }
 
-export function LeaderboardView({ entries, lastUpdated, versions, currentVersion, officialOnly, quickPicks = [], championBadges = {}, maxTaskCount = 0, initialTaskData = {} }: LeaderboardViewProps) {
+export function LeaderboardView({ entries, lastUpdated, versions, currentVersion, officialOnly, quickPicks = [], championBadges = {}, maxTaskCount = 0, initialTaskData = {}, initialSubmissions = [] }: LeaderboardViewProps) {
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -502,10 +505,11 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
                                 entries={filteredEntries}
                                 selectedCategories={selectedCategories}
                                 onCategoriesChange={setSelectedCategories}
+                                seededTaskData={taskDataBySubmission}
                             />
                         )}
                         {graphSubTab === 'distribution' && (
-                            <ScoreDistribution entries={businessFilteredEntries} scoreMode={scoreMode} currentVersion={currentVersion} officialOnly={officialOnlyState} />
+                            <ScoreDistribution entries={businessFilteredEntries} scoreMode={scoreMode} currentVersion={currentVersion} officialOnly={officialOnlyState} initialSubmissions={initialSubmissions} />
                         )}
                         {graphSubTab === 'radar' && (
                             <ModelRadar entries={businessFilteredEntries} scoreMode={scoreMode} />

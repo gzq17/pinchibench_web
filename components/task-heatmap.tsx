@@ -11,7 +11,6 @@ import { CategoryPills } from '@/components/category-pills'
 import { getCategoryMeta } from '@/lib/category-scores'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
-
 interface TaskHeatmapProps {
   entries: LeaderboardEntry[]
   selectedCategories: string[]

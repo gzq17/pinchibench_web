@@ -11,6 +11,7 @@
 import type {
   ApiLeaderboardEntry,
   ApiSubmissionDetail,
+  ApiSubmissionListItem,
   ModelSubmissionsResponse,
 } from '@/lib/types'
 import tasks from '../../all_task.json';
@@ -184,6 +185,33 @@ export const BAIDU_SUBMISSION_DETAIL: ApiSubmissionDetail = {
   rank: 1,
   percentile: 99,
 }
+
+/**
+ * Used by components/score-distribution.tsx (Graphs → Score Distribution).
+ * The box plot needs at least 2 runs per model, so this models the 3 runs
+ * reflected by submission_count. Edit the scores to match real results.
+ */
+export const BAIDU_DISTRIBUTION_SUBMISSIONS: ApiSubmissionListItem[] = [
+  0.9512,
+  0.9412,
+  0.9312,
+].map((score, i) => ({
+  id: `${BAIDU_SUBMISSION_ID}-run-${i + 1}`,
+  model: BAIDU_MODEL_NAME,
+  provider: BAIDU_PROVIDER,
+  score_percentage: score,
+  total_score: score,
+  max_score: 1,
+  total_execution_time_seconds: 120,
+  total_cost_usd: 0,
+  timestamp: BAIDU_TIMESTAMP,
+  created_at: BAIDU_TIMESTAMP,
+  client_version: null,
+  openclaw_version: BAIDU_OPENCLAW_VERSION,
+  benchmark_version: BAIDU_BENCHMARK_VERSION,
+  claimed: 1,
+  official: true,
+}))
 
 /** Used in app/model/[...slug]/page.tsx */
 export const BAIDU_MODEL_SUBMISSIONS: ModelSubmissionsResponse = {
