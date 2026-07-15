@@ -7,6 +7,7 @@ import { PROVIDER_COLORS } from '@/lib/types'
 import { fetchSubmissionClient } from '@/lib/api'
 import { calculateCategoryFilteredScore, calculateRanksByPercentage } from '@/lib/category-scores'
 import { transformSubmission } from '@/lib/transforms'
+import { BAIDU_SUBMISSION_DETAIL } from '@/lib/mock-data/baidu-ai-search'
 import { SimpleLeaderboard } from '@/components/simple-leaderboard'
 import { ScatterGraphs } from '@/components/scatter-graphs'
 import { TaskHeatmap } from '@/components/task-heatmap'
@@ -37,6 +38,12 @@ const VALID_SCORE_MODES: ScoreMode[] = ['best', 'average']
 const VALID_GRAPH_TABS: GraphSubTab[] = ['scatter', 'heatmap', 'distribution', 'radar']
 const VALID_SORT_MODES: SortMode[] = ['quality', 'value']
 
+// Mock submissions never live in the real API, so short-circuit the client fetch
+// with locally-bundled task results. Extend this map when adding more mocks.
+const MOCK_TASK_RESULTS_BY_SUBMISSION_ID: Record<string, TaskResult[]> = {
+    [BAIDU_SUBMISSION_DETAIL.id]: transformSubmission(BAIDU_SUBMISSION_DETAIL).task_results,
+}
+
 interface LeaderboardViewProps {
     entries: LeaderboardEntry[]
     lastUpdated: string
@@ -46,9 +53,13 @@ interface LeaderboardViewProps {
     quickPicks?: RecommendationPick[]
     championBadges?: Record<string, BestForBadge[]>
     maxTaskCount?: number
+    // Per-submission task results fetched on the server. Used to seed category
+    // scores so the sub-leaderboard does not depend on client-side per-submission
+    // fetches (which are blocked by CORS in most environments).
+    initialTaskData?: Record<string, TaskResult[]>
 }
 
-export function LeaderboardView({ entries, lastUpdated, versions, currentVersion, officialOnly, quickPicks = [], championBadges = {}, maxTaskCount = 0 }: LeaderboardViewProps) {
+export function LeaderboardView({ entries, lastUpdated, versions, currentVersion, officialOnly, quickPicks = [], championBadges = {}, maxTaskCount = 0, initialTaskData = {} }: LeaderboardViewProps) {
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -83,7 +94,12 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
     const [sortMode, setSortModeState] = useState<SortMode>(initialSortMode)
     const [maxCostFilter, setMaxCostFilterState] = useState<string>(initialBudget)
     const [showZeroCostResults, setShowZeroCostResultsState] = useState<boolean>(initialZeroCost)
-    const [taskDataBySubmission, setTaskDataBySubmission] = useState<Record<string, TaskResult[]>>({})
+    // Seed with server-provided task data (merged over the local mocks) so
+    // category scores render even when client-side submission fetches are
+    // blocked (CORS) in dev/preview environments.
+    const [taskDataBySubmission, setTaskDataBySubmission] = useState<Record<string, TaskResult[]>>(
+        () => ({ ...MOCK_TASK_RESULTS_BY_SUBMISSION_ID, ...initialTaskData })
+    )
     const [taskDataLoading, setTaskDataLoading] = useState(false)
     const [taskDataError, setTaskDataError] = useState<string | null>(null)
 
@@ -179,15 +195,57 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
         updateUrl({ zerocost: v ? 'true' : null })
     }, [updateUrl])
 
+    // Category filter: local state for immediate UI response, debounced URL sync.
+    const initialCategories = useMemo(
+        () => parseCategoriesParam(searchParams.get('categories')),
+        // Only compute from URL on mount; subsequent updates are driven by local state
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+    const [selectedCategories, setSelectedCategoriesState] = useState<string[]>(initialCategories)
+    const categoryUrlSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+    // Track whether the local state change originated from the user (vs. URL sync)
+    const categoryChangeSource = useRef<'user' | 'url'>('user')
+
     const setSelectedCategories = useCallback((cats: string[]) => {
         const normalized = [...new Set(cats.map((c) => c.trim().toLowerCase()).filter(Boolean))]
-        updateUrl({ categories: normalized.length ? normalized.join(',') : null })
-    }, [updateUrl])
+        categoryChangeSource.current = 'user'
+        setSelectedCategoriesState(normalized)
+    }, [])
 
-    const selectedCategories = useMemo(
-        () => parseCategoriesParam(searchParams.get('categories')),
-        [searchParams]
-    )
+    // Debounced URL sync: write local category state to URL after 300ms of inactivity.
+    // This avoids calling router.replace() on every rapid click.
+    useEffect(() => {
+        if (categoryChangeSource.current !== 'user') return
+        if (categoryUrlSyncTimer.current) {
+            clearTimeout(categoryUrlSyncTimer.current)
+        }
+        categoryUrlSyncTimer.current = setTimeout(() => {
+            const param = selectedCategories.length ? selectedCategories.join(',') : null
+            const current = searchParams.get('categories') ?? null
+            if (param !== current) {
+                updateUrl({ categories: param })
+            }
+            categoryUrlSyncTimer.current = null
+        }, 300)
+        return () => {
+            if (categoryUrlSyncTimer.current) {
+                clearTimeout(categoryUrlSyncTimer.current)
+                categoryUrlSyncTimer.current = null
+            }
+        }
+    }, [selectedCategories, searchParams, updateUrl])
+
+    // URL → local state sync: handles browser back/forward and external URL changes.
+    useEffect(() => {
+        const fromUrl = parseCategoriesParam(searchParams.get('categories'))
+        const localSorted = [...selectedCategories].sort().join(',')
+        const urlSorted = [...fromUrl].sort().join(',')
+        if (localSorted !== urlSorted) {
+            categoryChangeSource.current = 'url'
+            setSelectedCategoriesState(fromUrl)
+        }
+    }, [searchParams])
 
     const categoryFilterActive = selectedCategories.length > 0
 
@@ -263,6 +321,10 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
                     const batch = entriesToLoad.slice(i, i + batchSize)
                     const results = await Promise.all(
                         batch.map(async (entry) => {
+                            const mockTasks = MOCK_TASK_RESULTS_BY_SUBMISSION_ID[entry.submission_id]
+                            if (mockTasks) {
+                                return { submissionId: entry.submission_id, tasks: mockTasks }
+                            }
                             try {
                                 const response = await fetchSubmissionClient(entry.submission_id)
                                 return {
@@ -298,16 +360,29 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
         return () => { cancelled = true }
     }, [categoryFilterActive, filteredEntries, taskDataBySubmission])
 
-    const categoryScoredEntries = useMemo(() => {
-        if (!categoryFilterActive) return filteredEntries
+    const { categoryScoredEntries, activeCategoryTaskCount } = useMemo(() => {
+        if (!categoryFilterActive) return { categoryScoredEntries: filteredEntries, activeCategoryTaskCount: null as number | null }
 
         const scored: LeaderboardEntry[] = []
+        const taskCounts = new Set<number>()
 
         for (const entry of filteredEntries) {
             const tasks = taskDataBySubmission[entry.submission_id]
-            if (!tasks) continue
+            if (!tasks) {
+                // Task data unavailable (API unreachable or fetch failed);
+                // keep the entry with its overall score so the rest of the
+                // leaderboard is not silently dropped from the category view.
+                scored.push(entry)
+                continue
+            }
             const categoryScore = calculateCategoryFilteredScore(tasks, selectedCategories)
-            if (categoryScore.percentage == null || categoryScore.count === 0) continue
+            if (categoryScore.count > 0) taskCounts.add(categoryScore.count)
+            if (categoryScore.percentage == null || categoryScore.count === 0) {
+                // This model has no tasks in the selected categories; still
+                // show it using its overall score instead of removing it.
+                scored.push(entry)
+                continue
+            }
             scored.push({
                 ...entry,
                 percentage: categoryScore.percentage,
@@ -317,20 +392,12 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
 
         scored.sort((a, b) => b.percentage - a.percentage)
 
-        return calculateRanksByPercentage(scored)
-    }, [categoryFilterActive, filteredEntries, selectedCategories, taskDataBySubmission])
+        const maxCount = taskCounts.size > 0 ? Math.max(...taskCounts) : (taskDataLoading ? null : 0)
 
-    const activeCategoryTaskCount = useMemo(() => {
-        if (!categoryFilterActive) return null
-        const counts = new Set<number>()
-        for (const entry of filteredEntries) {
-            const tasks = taskDataBySubmission[entry.submission_id]
-            if (!tasks) continue
-            const count = calculateCategoryFilteredScore(tasks, selectedCategories).count
-            if (count > 0) counts.add(count)
+        return {
+            categoryScoredEntries: calculateRanksByPercentage(scored),
+            activeCategoryTaskCount: maxCount,
         }
-        if (counts.size > 0) return Math.max(...counts)
-        return taskDataLoading ? null : 0
     }, [categoryFilterActive, filteredEntries, selectedCategories, taskDataBySubmission, taskDataLoading])
 
     const providerColor = providerFilters.length === 1

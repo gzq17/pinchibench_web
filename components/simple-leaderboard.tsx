@@ -148,6 +148,13 @@ export function SimpleLeaderboard({
   }
 
   const getSortScorePercentage = (entry: LeaderboardEntry) => {
+    // In category (sub-leaderboard) view the recalculated category score lives
+    // in `entry.percentage`, and `average_score_percentage` is nulled out.
+    // Sort by the category score so ordering matches what's actually displayed
+    // and stays consistent across all models, regardless of scoreMode.
+    if (categoryFilterActive) {
+      return entry.percentage
+    }
     if (scoreMode === 'average') {
       return entry.average_score_percentage != null
         ? entry.average_score_percentage * 100
@@ -203,7 +210,9 @@ export function SimpleLeaderboard({
       }
 
       // success view: respect sortMode
-      if (sortMode === 'value') {
+      // Category (sub-leaderboard) view always ranks by the category score, so
+      // skip the value-based ordering to match the category ranking.
+      if (!categoryFilterActive && sortMode === 'value') {
         const aV = a.value_score ?? -1
         const bV = b.value_score ?? -1
         if (Math.abs(bV - aV) > 1e-9) return bV - aV
@@ -213,7 +222,7 @@ export function SimpleLeaderboard({
       const bScore = getSortScorePercentage(b) ?? -1
       return bScore - aScore
     })
-  }, [budgetFilteredEntries, entries, view, sortMode, scoreMode, maxCost])
+  }, [budgetFilteredEntries, entries, view, sortMode, scoreMode, maxCost, categoryFilterActive])
 
   const rankedEntries = sortedEntries.filter((entry) => getViewValue(entry) !== null)
   const nullEntries = sortedEntries.filter((entry) => getViewValue(entry) === null)
@@ -553,7 +562,7 @@ export function SimpleLeaderboard({
               )}
             </div>
             <div className="space-y-3">
-              {(showAllEntries ? displayedEntries.concat(nullEntries) : displayedEntries).map((entry) => {
+              {(showAllEntries ? displayedEntries.concat(nullEntries) : displayedEntries).map((entry, index) => {
                 const bestPct = entry.percentage
                 const avgPct = entry.average_score_percentage != null
                   ? entry.average_score_percentage * 100
@@ -567,8 +576,8 @@ export function SimpleLeaderboard({
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-56 flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xl" title={`Rank ${entry.rank}`}>
-                              {getCrabEmoji(entry.rank)}
+                            <span className="text-xl" title={`Rank ${index + 1}`}>
+                              {getCrabEmoji(index + 1)}
                             </span>
                             <code className="text-xs font-mono text-foreground transition-colors truncate">
                               {entry.model}
@@ -759,7 +768,7 @@ export function SimpleLeaderboard({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {(showAllEntries ? displayedEntries.concat(nullEntries) : displayedEntries).map((entry) => {
+                {(showAllEntries ? displayedEntries.concat(nullEntries) : displayedEntries).map((entry, index) => {
                   const bestPct = entry.percentage
                   const avgPct = entry.average_score_percentage != null
                     ? entry.average_score_percentage * 100
@@ -776,7 +785,7 @@ export function SimpleLeaderboard({
                           href={entryHref(entry)}
                           className="flex items-center gap-2 transition-colors"
                         >
-                          <span className="text-lg">{getCrabEmoji(entry.rank)}</span>
+                          <span className="text-lg">{getCrabEmoji(index + 1)}</span>
                           <code className="text-xs md:text-sm font-mono truncate max-w-[180px] md:max-w-none">{entry.model}</code>
                           <span className="md:hidden">{renderBadges(entry)}</span>
                           {entry.official === false && (

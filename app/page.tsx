@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
+import type { ApiLeaderboardEntry } from '@/lib/types'
 import { fetchLeaderboard, fetchBenchmarkVersions, fetchTransformedBestSubmissions } from '@/lib/api'
-import { calculateRanks, transformLeaderboardEntry } from '@/lib/transforms'
+import { calculateRanks, transformLeaderboardEntry, transformSubmission } from '@/lib/transforms'
 import { enrichEntriesWithSubmissions, getCategoryChampionBadges, getQuickRecommendations } from '@/lib/recommendations'
 import { LeaderboardView } from '@/components/leaderboard-view'
-import { BAIDU_LEADERBOARD_ENTRY } from '@/lib/mock-data/baidu-ai-search'
+import { BAIDU_LEADERBOARD_ENTRY, BAIDU_SUBMISSION_DETAIL } from '@/lib/mock-data/baidu-ai-search'
 
 interface HomeProps {
   searchParams: Promise<{ version?: string; view?: string; official?: string }>
@@ -57,14 +58,14 @@ export default async function Home({ searchParams }: HomeProps) {
   const mockEntry: ApiLeaderboardEntry = {
   model: "Baidu AI Search",
   provider: "Baidu",
-  best_score_percentage: 0.947,     // 92%
+  best_score_percentage: 0.9512,     // 92%
   latest_submission: "2026-07-08T00:00:00Z",//new Date().toISOString(),
   best_submission_id: "mock-id-001",
-  submission_count: 1,
+  submission_count: 3,
   official: true,
   // 可选字段
-  best_cost_usd: 1.5,
-  average_cost_usd: 1.5,
+  best_cost_usd: null,
+  average_cost_usd: null,
   average_score_percentage: 0.9412,
   best_execution_time_seconds: null,
   average_execution_time_seconds: null,
@@ -72,11 +73,23 @@ export default async function Home({ searchParams }: HomeProps) {
   hf_link: null,
 }
   const entries = calculateRanks([...response.leaderboard.map(transformLeaderboardEntry), transformLeaderboardEntry(mockEntry)])
-  const topCandidateIds = entries.slice(0, 40).map((entry) => entry.submission_id)
-  const topSubmissions = await fetchTransformedBestSubmissions(topCandidateIds)
+  // Fetch task-level data for enough top entries that every model shown in the
+  // category sub-leaderboards is scored from real task data (seeded into the
+  // client below) rather than falling back to its overall score.
+  const topCandidateIds = entries.slice(0, 100).map((entry) => entry.submission_id)
+  const apiTopSubmissions = await fetchTransformedBestSubmissions(topCandidateIds)
+  // Merge mock submissions so category-level scores (and category-champion crowns)
+  // include entries that don't exist in the real API.
+  const topSubmissions = [...apiTopSubmissions, transformSubmission(BAIDU_SUBMISSION_DETAIL)]
   const enrichedEntries = enrichEntriesWithSubmissions(entries, topSubmissions)
   const quickPicks = getQuickRecommendations(enrichedEntries)
   const championBadges = Object.fromEntries(getCategoryChampionBadges(enrichedEntries))
+  // Seed client-side category scoring with the task data already fetched on the
+  // server. The browser cannot fetch per-submission details directly (CORS), so
+  // without this the category sub-leaderboards fall back to overall scores.
+  const initialTaskData = Object.fromEntries(
+    topSubmissions.map((submission) => [submission.submission_id, submission.task_results])
+  )
   const maxTaskCount = topSubmissions.length > 0
     ? Math.max(...topSubmissions.map((s) => s.metadata.task_count))
     : 0
@@ -105,6 +118,7 @@ export default async function Home({ searchParams }: HomeProps) {
       quickPicks={quickPicks}
       championBadges={championBadges}
       maxTaskCount={maxTaskCount}
+      initialTaskData={initialTaskData}
     />
   )
 }
