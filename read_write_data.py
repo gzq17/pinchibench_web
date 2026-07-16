@@ -16,10 +16,10 @@ def data_process():
         json.dump(obj, f, ensure_ascii=False, indent=4)
 
 def adjust_json():
-    json_name = "./all_task_old.json"
+    json_name = "./all_task_score/all_task_old.json"
     with open(json_name, "r", encoding="utf-8") as f:
         data_old = json.load(f)
-    json_name = "./all_task_new.json"
+    json_name = "./all_task_score/all_task_claude_94.6.json"
     with open(json_name, "r", encoding="utf-8") as f:
         data = json.load(f)
     task_id_list = []
@@ -36,5 +36,17 @@ def adjust_json():
     with open("./all_task.json", "w", encoding="utf-8") as f:
         json.dump(new_data, f, ensure_ascii=False, indent=4)
 
+def compute_ave_score():
+    json_name = "./all_task_score/all_task_claude_94.12.json"
+    with open(json_name, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    score_list = []
+    for item in data:
+        score_list.append(item["score"])
+    ave_score = sum(score_list) / len(score_list)
+    print(ave_score)
+    ## 94.64, 94.32, 94.12-->96.36
+
 if __name__ == "__main__":
-    adjust_json()
+    # adjust_json()
+    compute_ave_score()

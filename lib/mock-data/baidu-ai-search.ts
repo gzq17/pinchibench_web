@@ -1,5 +1,5 @@
 /**
- * Mock data for Baidu AI Search on PinchBench leaderboard.
+ * Mock data for Orion-Mission-Mode on PinchBench leaderboard.
  *
  * Replace the placeholder values below with real benchmark results.
  * This file is the single source of truth consumed by:
@@ -20,7 +20,7 @@ import tasks from '../../all_task.json';
 // 1. Basic identity – edit these when you have the real values
 // ---------------------------------------------------------------------------
 
-export const BAIDU_MODEL_NAME = 'Baidu AI Search'
+export const BAIDU_MODEL_NAME = 'Orion-Mission-Mode'
 export const BAIDU_PROVIDER = 'Baidu'
 export const BAIDU_SUBMISSION_ID = 'mock-id-001'
 export const BAIDU_TIMESTAMP = '2026-07-08T00:00:00Z'
@@ -32,14 +32,14 @@ export const BAIDU_BENCHMARK_VERSION = 'v2.0'
 // ---------------------------------------------------------------------------
 
 export const BAIDU_TOTAL_SCORE = 0.9412
-export const BAIDU_MAX_SCORE = 0.9412
-export const BAIDU_AVE_SCORE = 0.9412
-export const BAIDU_MEDIAN_SCORE = 0.9412
-export const BAIDU_BEST_SCORE = 0.9412
+export const BAIDU_MAX_SCORE = 0.9464
+export const BAIDU_AVE_SCORE = 0.9436
+export const BAIDU_MEDIAN_SCORE = 0.9432
+export const BAIDU_BEST_SCORE = 0.9464
 
 /** 0-1 range, e.g. 0.947 = 94.7 % */
-export const BAIDU_BEST_SCORE_PERCENTAGE = 0.9412
-export const BAIDU_AVERAGE_SCORE_PERCENTAGE = 0.9412
+export const BAIDU_BEST_SCORE_PERCENTAGE = 0.9464
+export const BAIDU_AVERAGE_SCORE_PERCENTAGE = 0.9436
 
 // ---------------------------------------------------------------------------
 // 3. Cost & speed
@@ -192,9 +192,9 @@ export const BAIDU_SUBMISSION_DETAIL: ApiSubmissionDetail = {
  * reflected by submission_count. Edit the scores to match real results.
  */
 export const BAIDU_DISTRIBUTION_SUBMISSIONS: ApiSubmissionListItem[] = [
-  0.9512,
   0.9412,
-  0.9312,
+  0.9432,
+  0.9464,
 ].map((score, i) => ({
   id: `${BAIDU_SUBMISSION_ID}-run-${i + 1}`,
   model: BAIDU_MODEL_NAME,

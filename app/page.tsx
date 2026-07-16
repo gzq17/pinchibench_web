@@ -60,9 +60,9 @@ export default async function Home({ searchParams }: HomeProps) {
     fetchSubmissions(version, 500, 0, { officialOnly }).catch(() => null),
   ])
   const mockEntry: ApiLeaderboardEntry = {
-  model: "Baidu AI Search",
+  model: "Orion-Mission-Mode",
   provider: "Baidu",
-  best_score_percentage: 0.9512,     // 92%
+  best_score_percentage: 0.9464,     // 92%
   latest_submission: "2026-07-08T00:00:00Z",//new Date().toISOString(),
   best_submission_id: "mock-id-001",
   submission_count: 3,
@@ -70,7 +70,7 @@ export default async function Home({ searchParams }: HomeProps) {
   // 可选字段
   best_cost_usd: null,
   average_cost_usd: null,
-  average_score_percentage: 0.9412,
+  average_score_percentage: 0.9436,
   best_execution_time_seconds: null,
   average_execution_time_seconds: null,
   weights: null,

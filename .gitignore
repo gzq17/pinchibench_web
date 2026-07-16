@@ -12,3 +12,5 @@ node_modules/
 next-env.d.ts
 .vercel
 *.tsbuildinfo
+
+all_task_score
