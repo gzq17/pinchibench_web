@@ -371,21 +371,15 @@ export function LeaderboardView({ entries, lastUpdated, versions, currentVersion
 
         for (const entry of filteredEntries) {
             const tasks = taskDataBySubmission[entry.submission_id]
-            if (!tasks) {
-                // Task data unavailable (API unreachable or fetch failed);
-                // keep the entry with its overall score so the rest of the
-                // leaderboard is not silently dropped from the category view.
-                scored.push(entry)
-                continue
-            }
+            // No task data (API unreachable / not seeded), or the model has no
+            // tasks in the selected categories: exclude it from the category
+            // sub-leaderboard entirely, matching the official site. Falling back
+            // to the overall score here would surface models (e.g. ones that only
+            // ran the sanity task) that don't actually have results in this category.
+            if (!tasks) continue
             const categoryScore = calculateCategoryFilteredScore(tasks, selectedCategories)
-            if (categoryScore.count > 0) taskCounts.add(categoryScore.count)
-            if (categoryScore.percentage == null || categoryScore.count === 0) {
-                // This model has no tasks in the selected categories; still
-                // show it using its overall score instead of removing it.
-                scored.push(entry)
-                continue
-            }
+            if (categoryScore.percentage == null || categoryScore.count === 0) continue
+            taskCounts.add(categoryScore.count)
             scored.push({
                 ...entry,
                 percentage: categoryScore.percentage,
