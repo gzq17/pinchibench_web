@@ -292,7 +292,7 @@ export function SimpleLeaderboard({
 
     return (
       <span className="flex flex-col items-start gap-1">
-        {badges.slice(0, 3).map((badge) => (
+        {badges.map((badge) => (
           <span
             key={badge.key}
             className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200 whitespace-nowrap"

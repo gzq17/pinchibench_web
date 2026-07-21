@@ -114,7 +114,7 @@ export function transformTaskResult(apiTask: ApiTaskResult): TaskResult {
     apiTask.frontmatter?.name ?? fallback?.name ?? apiTask.task_id;
   const category = resolveTaskCategory(
     apiTask.task_id,
-    apiTask.frontmatter?.category ?? fallback?.category,
+    apiTask.frontmatter?.category ?? apiTask.category ?? fallback?.category,
   );
 
   return {

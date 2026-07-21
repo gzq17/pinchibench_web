@@ -192,6 +192,10 @@ export interface ApiTaskResult {
   timed_out: boolean;
   notes?: string;
   execution_time_seconds?: number | null;
+  // Some sources (e.g. mock submissions) put the category at the top level
+  // instead of inside `frontmatter`. Kept optional so real API payloads that
+  // only carry `frontmatter.category` still type-check.
+  category?: string;
   frontmatter?: {
     id?: string;
     name?: string;
