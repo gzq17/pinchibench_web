@@ -6,7 +6,7 @@ import type {
   RecommendationPick,
   Submission,
 } from "@/lib/types";
-import { CATEGORY_ICONS } from "@/lib/types";
+import { CATEGORY_ICONS, TASK_CATEGORIES } from "@/lib/types";
 
 export const BEST_FOR_CATEGORIES = [
   {
@@ -147,7 +147,27 @@ export function getCategoryChampionBadges(entries: EnrichedLeaderboardEntry[]): 
     }
   }
 
-  for (const category of categories) {
+  // Award crowns in a stable, meaningful order. Categories that have a real
+  // sub-leaderboard (the standard TASK_CATEGORIES) come first, in their canonical
+  // order, followed by any extra categories alphabetically. The badge row is
+  // capped in the UI (slice(0, 3)), so this guarantees crowns for sub-leaderboard
+  // categories (e.g. Writing, where a model may rank #1) are shown before crowns
+  // for auxiliary categories that have no sub-leaderboard (e.g. Log Analysis).
+  const standardOrder = TASK_CATEGORIES.map((c) => c.id);
+  const orderedCategories = [...categories].sort((a, b) => {
+    const ai = standardOrder.indexOf(a);
+    const bi = standardOrder.indexOf(b);
+    const ar = ai === -1 ? Number.MAX_SAFE_INTEGER : ai;
+    const br = bi === -1 ? Number.MAX_SAFE_INTEGER : bi;
+    if (ar !== br) return ar - br;
+    return a.localeCompare(b);
+  });
+
+  for (const category of orderedCategories) {
+    // "other" is the catch-all bucket for tasks with no recognizable category.
+    // The official site never awards an "other" crown, so skip it here too.
+    if (category === "other") continue;
+
     const champion = [...entries]
       .filter((entry) => getCategoryScore(entry, category) != null)
       .sort((a, b) => {
