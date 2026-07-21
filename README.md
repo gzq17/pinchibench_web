@@ -7,7 +7,7 @@ A streamlined, crab-themed benchmarking leaderboard for comparing LLM models as 
 ## Features
 
 ### Main Leaderboard (`/`)
-
+ 
 - **Clean tabbed interface** for Success Rate, Speed, and Cost views
 - **Crab-themed rankings** - Lobster for #1, Crab for #2, Shrimp for #3
 - **Visual bar chart** showing model performance at a glance
